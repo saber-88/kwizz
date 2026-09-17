@@ -1,0 +1,13 @@
+/home/karmveer/.coding/quiz-app/src/main/java/com/quizapp/QuizAppApplication.java
+/home/karmveer/.coding/quiz-app/src/main/java/com/quizapp/entity/Host.java
+/home/karmveer/.coding/quiz-app/src/main/java/com/quizapp/entity/Participant.java
+/home/karmveer/.coding/quiz-app/src/main/java/com/quizapp/entity/Question.java
+/home/karmveer/.coding/quiz-app/src/main/java/com/quizapp/entity/Quiz.java
+/home/karmveer/.coding/quiz-app/src/main/java/com/quizapp/entity/QuizSession.java
+/home/karmveer/.coding/quiz-app/src/main/java/com/quizapp/entity/Score.java
+/home/karmveer/.coding/quiz-app/src/main/java/com/quizapp/repository/HostRepository.java
+/home/karmveer/.coding/quiz-app/src/main/java/com/quizapp/repository/ParticipantRepository.java
+/home/karmveer/.coding/quiz-app/src/main/java/com/quizapp/repository/QuestionRepository.java
+/home/karmveer/.coding/quiz-app/src/main/java/com/quizapp/repository/QuizRepository.java
+/home/karmveer/.coding/quiz-app/src/main/java/com/quizapp/repository/QuizSessionRepository.java
+/home/karmveer/.coding/quiz-app/src/main/java/com/quizapp/repository/ScoreRepository.java
