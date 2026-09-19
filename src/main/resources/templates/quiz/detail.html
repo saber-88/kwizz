@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${quiz.title}">Quiz</title>
+    <style>
+        body { font-family: sans-serif; max-width: 640px; margin: 40px auto; color: #000; padding: 0 16px; }
+        a { color: #000; }
+        .question { border: 1px solid #000; padding: 12px 16px; margin-top: 12px; }
+        .question ul { margin: 8px 0 0; padding-left: 20px; }
+        .correct { font-weight: bold; }
+        label { display: block; margin-top: 14px; font-weight: bold; }
+        input { width: 100%; padding: 8px; border: 1px solid #000; margin-top: 4px; box-sizing: border-box; font-family: inherit; }
+        button { margin-top: 20px; padding: 8px 16px; border: 1px solid #000; background: #fff; cursor: pointer; }
+        .delete-form { margin-top: 24px; }
+        .delete-btn { border-color: #900; color: #900; }
+        .empty { color: #555; }
+        hr { border: none; border-top: 1px solid #000; margin: 32px 0; }
+    </style>
+</head>
+<body>
+<a th:href="@{/quizzes}">&larr; Back to my quizzes</a>
+<h1 th:text="${quiz.title}"></h1>
+<p th:text="${quiz.description}"></p>
+
+<h2>Questions</h2>
+<p class="empty" th:if="${#lists.isEmpty(quiz.questions)}">No questions yet - add one below.</p>
+
+<div class="question" th:each="q, iter : ${quiz.questions}">
+    <strong th:text="${iter.count} + '. ' + ${q.text}"></strong>
+    <ul>
+        <li th:text="'A. ' + ${q.optionA}" th:classappend="${q.correctOption == 0} ? 'correct'"></li>
+        <li th:text="'B. ' + ${q.optionB}" th:classappend="${q.correctOption == 1} ? 'correct'"></li>
+        <li th:text="'C. ' + ${q.optionC}" th:classappend="${q.correctOption == 2} ? 'correct'"></li>
+        <li th:text="'D. ' + ${q.optionD}" th:classappend="${q.correctOption == 3} ? 'correct'"></li>
+    </ul>
+    <small th:text="'Time limit: ' + ${q.timeLimitSeconds} + 's (bold option is correct)'"></small>
+    <form th:action="@{/quizzes/{quizId}/questions/{qid}/delete(quizId=${quiz.id},qid=${q.id})}" method="post"
+          onsubmit="return confirm('Delete this question?');">
+        <button type="submit">Delete question</button>
+    </form>
+</div>
+
+<hr>
+
+<h2>Add a question</h2>
+<form th:action="@{/quizzes/{id}/questions(id=${quiz.id})}" method="post">
+    <label for="text">Question text</label>
+    <input type="text" id="text" name="text" required>
+
+    <label for="optionA">Option A</label>
+    <input type="text" id="optionA" name="optionA" required>
+    <label for="optionB">Option B</label>
+    <input type="text" id="optionB" name="optionB" required>
+    <label for="optionC">Option C</label>
+    <input type="text" id="optionC" name="optionC" required>
+    <label for="optionD">Option D</label>
+    <input type="text" id="optionD" name="optionD" required>
+
+    <label for="correctOption">Correct option (0 = A, 1 = B, 2 = C, 3 = D)</label>
+    <input type="number" id="correctOption" name="correctOption" min="0" max="3" required>
+
+    <label for="timeLimitSeconds">Time limit (seconds)</label>
+    <input type="number" id="timeLimitSeconds" name="timeLimitSeconds" value="20">
+
+    <button type="submit">Add question</button>
+</form>
+
+<form class="delete-form" th:action="@{/quizzes/{id}/delete(id=${quiz.id})}" method="post"
+      onsubmit="return confirm('Delete this quiz and all its questions?');">
+    <button type="submit" class="delete-btn">Delete this quiz</button>
+</form>
+</body>
+</html>
