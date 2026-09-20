@@ -23,6 +23,11 @@
 <h1 th:text="${quiz.title}"></h1>
 <p th:text="${quiz.description}"></p>
 
+
+<form th:action="@{/quizzes/{id}/sessions(id=${quiz.id})}" method="post" style="display:inline">
+    <button type="submit">Start live session</button>
+</form>
+
 <h2>Questions</h2>
 <p class="empty" th:if="${#lists.isEmpty(quiz.questions)}">No questions yet - add one below.</p>
 

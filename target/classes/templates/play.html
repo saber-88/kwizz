@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <title>Playing</title>
+</head>
+<body>
+<h1>Hi, <span th:text="${participant.nickname}"></span></h1>
+
+<div id="waiting" th:style="${session.status.name() == 'WAITING'} ? '' : 'display:none'">
+    <p>Waiting for the host to start…</p>
+</div>
+
+<div id="finished" th:style="${session.status.name() == 'FINISHED'} ? '' : 'display:none'">
+    <h2>Quiz finished — thanks for playing!</h2>
+</div>
+
+<div id="question-box" th:style="${session.status.name() == 'IN_PROGRESS'} ? '' : 'display:none'">
+    <p id="question-progress"></p>
+    <h2 id="question-text"></h2>
+    <button class="option-btn" data-option="0" id="optA"></button>
+    <button class="option-btn" data-option="1" id="optB"></button>
+    <button class="option-btn" data-option="2" id="optC"></button>
+    <button class="option-btn" data-option="3" id="optD"></button>
+</div>
+
+<p id="answer-feedback"></p>
+
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7/bundles/stomp.umd.min.js"></script>
+
+<script th:inline="javascript">
+    const sessionId = /*[[${session.id}]]*/ 0;
+    const participantToken = /*[[${participant.sessionToken}]]*/ '';
+
+    /*[# th:if="${session.status.name() == 'IN_PROGRESS'}"]*/
+    renderQuestion({
+        questionId: /*[[${session.quiz.questions[session.currentQuestionIndex].id}]]*/ 0,
+        text: /*[[${session.quiz.questions[session.currentQuestionIndex].text}]]*/ '',
+        optionA: /*[[${session.quiz.questions[session.currentQuestionIndex].optionA}]]*/ '',
+        optionB: /*[[${session.quiz.questions[session.currentQuestionIndex].optionB}]]*/ '',
+        optionC: /*[[${session.quiz.questions[session.currentQuestionIndex].optionC}]]*/ '',
+        optionD: /*[[${session.quiz.questions[session.currentQuestionIndex].optionD}]]*/ '',
+        questionNumber: /*[[${session.currentQuestionIndex + 1}]]*/ 1,
+        totalQuestions: /*[[${session.quiz.questions.size()}]]*/ 1
+    });
+    /*[/]*/
+
+    const socket = new SockJS('/ws');
+    const stompClient = new StompJs.Client({
+        webSocketFactory: () => socket,
+        onConnect: () => {
+            stompClient.subscribe('/topic/session/' + sessionId + '/question', (message) => {
+                const data = JSON.parse(message.body);
+                if (data.finished) {
+                    showFinished();
+                } else {
+                    renderQuestion(data);
+                }
+            });
+        }
+    });
+    stompClient.activate();
+
+    function renderQuestion(data) {
+        document.getElementById('waiting').style.display = 'none';
+        document.getElementById('finished').style.display = 'none';
+        document.getElementById('question-box').style.display = '';
+        document.getElementById('question-progress').textContent =
+            'Question ' + data.questionNumber + ' of ' + data.totalQuestions;
+        document.getElementById('question-text').textContent = data.text;
+        setOption('optA', 'A', data.optionA, data.questionId);
+        setOption('optB', 'B', data.optionB, data.questionId);
+        setOption('optC', 'C', data.optionC, data.questionId);
+        setOption('optD', 'D', data.optionD, data.questionId);
+        document.getElementById('answer-feedback').textContent = '';
+    }
+
+    function setOption(id, letter, text, questionId) {
+        const el = document.getElementById(id);
+        el.textContent = letter + '. ' + text;
+        el.dataset.questionId = questionId;
+    }
+
+    function showFinished() {
+        document.getElementById('waiting').style.display = 'none';
+        document.getElementById('question-box').style.display = 'none';
+        document.getElementById('finished').style.display = '';
+    }
+
+    document.querySelectorAll('.option-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.getElementById('answer-feedback').textContent =
+                'Answer submitted (scoring not built yet).';
+        });
+    });
+</script>
+</body>
+</html>

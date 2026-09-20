@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <title>Join a quiz</title>
+</head>
+<body>
+<h1>Join a quiz</h1>
+<p th:if="${error}" th:text="${error}"></p>
+
+<form th:action="@{/join}" method="post">
+    <label>Join code</label>
+    <input type="text" name="code" th:value="${prefilledCode}" required>
+
+    <label>Nickname</label>
+    <input type="text" name="nickname" required>
+
+    <button type="submit">Join</button>
+</form>
+</body>
+</html>

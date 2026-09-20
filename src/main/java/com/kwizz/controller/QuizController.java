@@ -15,25 +15,17 @@ import java.security.Principal;
 public class QuizController {
 
     private final QuizService quizService;
-    private final HostRepository hostRepository;
 
-    public QuizController(QuizService quizService, HostRepository hostRepository) {
+
+    public QuizController(QuizService quizService) {
         this.quizService = quizService;
-        this.hostRepository = hostRepository;
     }
 
-    // Principal is injected by Spring Security - principal.getName() is
-    // whatever username the host logged in with. We look up their Host row
-    // fresh on each request rather than storing the id in the session.
-    private Long currentHostId(Principal principal) {
-        return hostRepository.findByUsername(principal.getName())
-                .orElseThrow(() -> new IllegalStateException("Logged-in host not found in database"))
-                .getId();
-    }
+
 
     @GetMapping
     public String listQuizzes(Model model, Principal principal) {
-        model.addAttribute("quizzes", quizService.getQuizzesForHost(currentHostId(principal)));
+        model.addAttribute("quizzes", quizService.getQuizzesForHost(quizService.getCurrentHostId(principal)));
         return "quiz/list";
     }
 
@@ -46,7 +38,7 @@ public class QuizController {
     public String createQuiz(@RequestParam String title,
                              @RequestParam(required = false) String description,
                              Principal principal) {
-        Quiz quiz = quizService.createQuiz(title, description, currentHostId(principal));
+        Quiz quiz = quizService.createQuiz(title, description, quizService.getCurrentHostId(principal));
         return "redirect:/quizzes/" + quiz.getId();
     }
 

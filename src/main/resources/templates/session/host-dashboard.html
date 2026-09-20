@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <title>Live session</title>
+</head>
+<body>
+<a th:href="@{/quizzes/{id}(id=${quizSession.quiz.id})}"> Back to quiz</a>
+<h1 th:text="${quizSession.quiz.title}"></h1>
+
+<h2>Join code: <span th:text="${quizSession.joinCode}"></span></h2>
+<img th:src="@{/sessions/{id}/qr.png(id=${quizSession.id})}" alt="QR code to join" width="300" height="300">
+
+<p>Status: <span th:text="${quizSession.status}"></span></p>
+
+</body>
+</html>

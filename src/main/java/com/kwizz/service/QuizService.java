@@ -9,6 +9,7 @@ import com.kwizz.repository.QuizRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.Principal;
 import java.util.List;
 
 /**
@@ -28,7 +29,11 @@ public class QuizService {
         this.hostRepository = hostRepository;
         this.questionRepository = questionRepository;
     }
-
+    public Long getCurrentHostId(Principal principal) {
+        return hostRepository.findByUsername(principal.getName())
+                .orElseThrow(() -> new IllegalStateException("Logged-in host not found in database"))
+                .getId();
+    }
     public List<Quiz> getQuizzesForHost(Long hostId) {
         return quizRepository.findByHostId(hostId);
     }
