@@ -37,6 +37,7 @@ public class SessionService {
         QuizSession session = sessionRepo.findById(sessionId)
                 .orElseThrow(() -> new IllegalArgumentException("No session with id " + sessionId));
         session.getQuiz().getQuestions().size();
+        session.getParticipants().size();
 
         return session;
     }

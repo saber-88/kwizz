@@ -5,19 +5,21 @@ import com.google.zxing.WriterException;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
+import com.kwizz.dto.AnswerMessage;
 import com.kwizz.dto.QuestionMessage;
+import com.kwizz.entity.Participant;
 import com.kwizz.entity.Question;
+import com.kwizz.entity.Quiz;
 import com.kwizz.entity.QuizSession;
+import com.kwizz.service.ParticipantService;
 import com.kwizz.service.SessionService;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.io.ByteArrayOutputStream;
@@ -28,11 +30,13 @@ import java.util.Map;
 public class SessionController {
 
     private final SessionService sessionService;
+    private final ParticipantService participantService;
     private final SimpMessagingTemplate messagingTemplate;
 
-    public SessionController(SessionService sessionService, SimpMessagingTemplate messagingTemplate) {
+    public SessionController(SessionService sessionService, ParticipantService participantService, SimpMessagingTemplate messagingTemplate) {
         this.sessionService = sessionService;
         this.messagingTemplate = messagingTemplate;
+        this.participantService = participantService;
     }
 
     @PostMapping("/quizzes/{quizId}/sessions")
@@ -49,15 +53,30 @@ public class SessionController {
 
     @PostMapping("/sessions/{id}/next")
     public String nextQuestion(@PathVariable Long id) {
-        sessionService.nextQuestion(id);
+
+        QuizSession session = sessionService.nextQuestion(id);
+        broadcastCurrentState(id,session);
         return "redirect:/sessions/" + id;
+    }
+
+    @PostMapping("/session/{sessionId}/answer")
+    public void getAnswer(@PathVariable Long sessionId,
+                          @RequestBody AnswerMessage answer,
+                          HttpSession httpSession)
+    {
+        String token = (String) httpSession.getAttribute("participantToken");
+        Participant participant = participantService.getByToken(token);
+
     }
 
     @PostMapping("/sessions/{id}/stop")
     public String stopSession(@PathVariable Long id) {
+
         sessionService.stopSession(id);
+
         return "redirect:/sessions/" + id;
     }
+
 
     private void broadcastCurrentState(Long sessionId, QuizSession session) {
         String destination = "/topic/session/" + sessionId + "/question";

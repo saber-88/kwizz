@@ -4,6 +4,7 @@ import com.kwizz.entity.Participant;
 import com.kwizz.service.ParticipantService;
 import com.kwizz.service.SessionService;
 import jakarta.servlet.http.HttpSession;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -13,10 +14,12 @@ public class JoinController {
 
     private final ParticipantService participantService;
     private final SessionService sessionService;
+    private final SimpMessagingTemplate messagingTemplate;
 
-    public JoinController(ParticipantService participantService, SessionService sessionService) {
+    public JoinController(ParticipantService participantService, SessionService sessionService, SimpMessagingTemplate messagingTemplate) {
         this.participantService = participantService;
         this.sessionService = sessionService;
+        this.messagingTemplate = messagingTemplate;
     }
 
     // The "code" query param lets a scanned QR (which encodes
@@ -38,6 +41,11 @@ public class JoinController {
             // This is the participant's entire "login" - one token in their
             // HttpSession, checked by playScreen() below on every visit.
             session.setAttribute("participantToken", participant.getSessionToken());
+            Long sessionId = participant.getSession().getId();
+            messagingTemplate.convertAndSend("/topic/session/" + sessionId + "/participants",
+                    participantService.getNickNames(sessionId)
+            );
+
             return "redirect:/play/" + participant.getSession().getId();
         } catch (IllegalArgumentException e) {
             model.addAttribute("error", e.getMessage());
@@ -53,7 +61,7 @@ public class JoinController {
             return "redirect:/join"; // never joined - send them back to start
         }
         model.addAttribute("participant", participantService.getByToken(token));
-        model.addAttribute("session", sessionService.getSession(sessionId));
+        model.addAttribute("quizSession", sessionService.getSession(sessionId));
         return "play";
     }
 }

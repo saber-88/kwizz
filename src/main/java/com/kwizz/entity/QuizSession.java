@@ -24,6 +24,7 @@ public class QuizSession {
     private String joinCode;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private Status status = Status.WAITING;
 
     // index into quiz.getQuestions() - which question is currently live

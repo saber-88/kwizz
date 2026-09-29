@@ -5,13 +5,73 @@
     <title>Live session</title>
 </head>
 <body>
-<a th:href="@{/quizzes/{id}(id=${quizSession.quiz.id})}"> Back to quiz</a>
+<a th:href="@{/quizzes/{id}(id=${quizSession.quiz.id})}">&larr; Back to quiz</a>
 <h1 th:text="${quizSession.quiz.title}"></h1>
 
-<h2>Join code: <span th:text="${quizSession.joinCode}"></span></h2>
-<img th:src="@{/sessions/{id}/qr.png(id=${quizSession.id})}" alt="QR code to join" width="300" height="300">
+<div th:if="${quizSession.status.name() == 'WAITING'}">
+    <h2>Join code: <span th:text="${quizSession.joinCode}"></span></h2>
+    <img th:src="@{/sessions/{id}/qr.png(id=${quizSession.id})}" alt="QR code to join" width="300" height="300">
+    <p>Waiting to start…</p>
 
-<p>Status: <span th:text="${quizSession.status}"></span></p>
+    <h3>Participants joined: <span id="participant-count" th:text="${quizSession.participants.size()}"></span></h3>
+    <ul id="participant-list">
+        <li th:each="p : ${quizSession.participants}" th:text="${p.nickname}"></li>
+    </ul>
 
+    <form th:action="@{/sessions/{id}/next(id=${quizSession.id})}" method="post">
+        <button type="submit">Start quiz</button>
+    </form>
+</div>
+
+<div th:if="${quizSession.status.name() == 'IN_PROGRESS'}">
+    <p th:text="'Question ' + (${quizSession.currentQuestionIndex} + 1) + ' of ' + ${quizSession.quiz.questions.size()}"></p>
+    <h2 th:text="${quizSession.quiz.questions[quizSession.currentQuestionIndex].text}"></h2>
+    <ul>
+        <li th:text="'A. ' + ${quizSession.quiz.questions[quizSession.currentQuestionIndex].optionA}"></li>
+        <li th:text="'B. ' + ${quizSession.quiz.questions[quizSession.currentQuestionIndex].optionB}"></li>
+        <li th:text="'C. ' + ${quizSession.quiz.questions[quizSession.currentQuestionIndex].optionC}"></li>
+        <li th:text="'D. ' + ${quizSession.quiz.questions[quizSession.currentQuestionIndex].optionD}"></li>
+    </ul>
+    <form th:action="@{/sessions/{id}/next(id=${quizSession.id})}" method="post" style="display:inline">
+        <button type="submit">Next question</button>
+    </form>
+    <form th:action="@{/sessions/{id}/stop(id=${quizSession.id})}" method="post" style="display:inline"
+          onsubmit="return confirm('Stop this quiz now?');">
+        <button type="submit">Stop quiz</button>
+    </form>
+</div>
+
+<div th:if="${quizSession.status.name() == 'FINISHED'}">
+    <h2>Quiz finished</h2>
+    <p>This session has ended.</p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7/bundles/stomp.umd.min.js"></script>
+<script th:inline="javascript">
+    const sessionId = /*[[${quizSession.id}]]*/ 0;
+
+    const socket = new SockJS('/ws');
+    const stompClient = new StompJs.Client({
+        webSocketFactory: () => socket,
+        onConnect: () => {
+            stompClient.subscribe('/topic/session/' + sessionId + '/participants', (message) => {
+                const nicknames = JSON.parse(message.body);
+                const countEl = document.getElementById('participant-count');
+                const listEl = document.getElementById('participant-list');
+                if (!countEl || !listEl) return;
+
+                countEl.textContent = nicknames.length;
+                listEl.innerHTML = '';
+                nicknames.forEach(name => {
+                    const li = document.createElement('li');
+                    li.textContent = name;
+                    listEl.appendChild(li);
+                });
+            });
+        }
+    });
+    stompClient.activate();
+</script>
 </body>
 </html>

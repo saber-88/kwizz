@@ -6,6 +6,7 @@ import com.kwizz.repository.ParticipantRepository;
 import com.kwizz.repository.QuizSessionRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -25,6 +26,10 @@ public class ParticipantService {
         QuizSession session = sessionRepository.findByJoinCode(joinCode.trim().toUpperCase())
                 .orElseThrow(() -> new IllegalArgumentException("No session found with that join code."));
 
+        if(session.getStatus() != QuizSession.Status.WAITING){
+            throw new IllegalArgumentException("You are late , the quiz already started.");
+        }
+
         // No login for participants, so a random token is their entire
         // identity for the rest of the session - stored in their
         // HttpSession by JoinController after this returns.
@@ -36,5 +41,11 @@ public class ParticipantService {
     public Participant getByToken(String token) {
         return participantRepository.findBySessionToken(token)
                 .orElseThrow(() -> new IllegalArgumentException("Unknown participant."));
+    }
+
+    public List<String> getNickNames(Long sessionId){
+        return participantRepository.findBySessionId(sessionId).stream()
+                .map(Participant::getNickname)
+                .toList();
     }
 }
