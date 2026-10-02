@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <title>Register</title>
+</head>
+<body>
+<h1>Create a host account</h1>
+
+<p th:if="${error}" th:text="${error}"></p>
+
+<form th:action="@{/register}" method="post">
+    <label>Username</label>
+    <input type="text" name="username" required>
+
+    <label>Password</label>
+    <input type="password" name="password" required>
+
+    <button type="submit">Register</button>
+</form>
+
+<a th:href="@{/login}">Already have an account? Log in</a>
+</body>
+</html>

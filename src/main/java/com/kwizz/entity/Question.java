@@ -3,6 +3,8 @@ package com.kwizz.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 
+import java.util.List;
+
 @Entity
 @Table(name = "questions")
 public class Question {
@@ -14,6 +16,9 @@ public class Question {
     @NotBlank
     @Column(length = 500)
     private String text;
+
+    @OneToMany(mappedBy = "question" , cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Score> scores;
 
     // Keeping this simple: 4 fixed option columns rather than a separate
     // Option entity. Fine for a college project; a real product would

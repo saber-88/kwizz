@@ -2,18 +2,12 @@
 <html xmlns:th="http://www.w3.org/1999/xhtml">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
     <title>My quizzes</title>
-    <style>
-        body { font-family: sans-serif; max-width: 720px; margin: 40px auto; color: #000; padding: 0 16px; }
-        h1 { border-bottom: 2px solid #000; padding-bottom: 8px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #000; padding: 8px 12px; text-align: left; }
-        a { color: #000; }
-        .btn { display: inline-block; padding: 8px 16px; border: 1px solid #000; text-decoration: none; margin-top: 16px; }
-        .empty { color: #555; margin-top: 20px; }
-    </style>
+<script th:src="@{/js/theme.js}" defer></script>
 </head>
-<body>
+<body class="page-quiz-list">
 <h1>My quizzes</h1>
 <a class="btn" th:href="@{/quizzes/new}">+ New quiz</a>
 

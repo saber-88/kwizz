@@ -12,10 +12,14 @@ import com.kwizz.entity.Question;
 import com.kwizz.entity.Quiz;
 import com.kwizz.entity.QuizSession;
 import com.kwizz.service.ParticipantService;
+import com.kwizz.service.QuizGameManager;
+import com.kwizz.service.ScoreService;
 import com.kwizz.service.SessionService;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -30,13 +34,13 @@ import java.util.Map;
 public class SessionController {
 
     private final SessionService sessionService;
-    private final ParticipantService participantService;
-    private final SimpMessagingTemplate messagingTemplate;
+    private final ScoreService scoreService;
+    private final QuizGameManager quizGameManager;
 
-    public SessionController(SessionService sessionService, ParticipantService participantService, SimpMessagingTemplate messagingTemplate) {
+    public SessionController(SessionService sessionService, ScoreService scoreService, QuizGameManager quizGameManager) {
         this.sessionService = sessionService;
-        this.messagingTemplate = messagingTemplate;
-        this.participantService = participantService;
+        this.scoreService = scoreService;
+        this.quizGameManager = quizGameManager;
     }
 
     @PostMapping("/quizzes/{quizId}/sessions")
@@ -47,53 +51,37 @@ public class SessionController {
 
     @GetMapping("/sessions/{id}")
     public String dashboard(@PathVariable Long id, Model model){
+
         model.addAttribute("quizSession",sessionService.getSession(id));
+        model.addAttribute("leaderboard", scoreService.getLeaderboard(id).getEntries());
+        model.addAttribute("showingLeaderboard", quizGameManager.isShowingLeaderboard(id));
+
         return "session/host-dashboard";
     }
 
     @PostMapping("/sessions/{id}/next")
     public String nextQuestion(@PathVariable Long id) {
-
-        QuizSession session = sessionService.nextQuestion(id);
-        broadcastCurrentState(id,session);
+        quizGameManager.handleNextClick(id);
         return "redirect:/sessions/" + id;
     }
 
-    @PostMapping("/session/{sessionId}/answer")
-    public void getAnswer(@PathVariable Long sessionId,
-                          @RequestBody AnswerMessage answer,
-                          HttpSession httpSession)
+    @MessageMapping("/session/{sessionId}/answer")
+    public void getAnswer(@Payload AnswerMessage answerMessage)
     {
-        String token = (String) httpSession.getAttribute("participantToken");
-        Participant participant = participantService.getByToken(token);
-
+        scoreService.recordAnswer(
+                answerMessage.getParticipantToken(),
+                answerMessage.getQuestionId(),
+                answerMessage.getSelectedOption(),
+                answerMessage.getTimeTakenMs()
+        );
     }
 
     @PostMapping("/sessions/{id}/stop")
     public String stopSession(@PathVariable Long id) {
-
-        sessionService.stopSession(id);
-
+        quizGameManager.stopQuiz(id);
         return "redirect:/sessions/" + id;
     }
 
-
-    private void broadcastCurrentState(Long sessionId, QuizSession session) {
-        String destination = "/topic/session/" + sessionId + "/question";
-
-        if (session.getStatus() == QuizSession.Status.IN_PROGRESS) {
-            Question q = session.getQuiz().getQuestions().get(session.getCurrentQuestionIndex());
-            QuestionMessage message = new QuestionMessage(
-                    q.getId(), q.getText(), q.getOptionA(), q.getOptionB(), q.getOptionC(), q.getOptionD(),
-                    q.getTimeLimitSeconds(),
-                    session.getCurrentQuestionIndex() + 1,
-                    session.getQuiz().getQuestions().size()
-            );
-            messagingTemplate.convertAndSend(destination, message);
-        } else if (session.getStatus() == QuizSession.Status.FINISHED) {
-            messagingTemplate.convertAndSend(destination, Map.of("finished", true));
-        }
-    }
 
 
     @GetMapping(value = "/sessions/{id}/qr.png", produces = "image/png")

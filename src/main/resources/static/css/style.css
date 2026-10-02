@@ -1,0 +1,730 @@
+/* ==========================================================================
+   KWIZZ — Shared UI
+   ========================================================================== */
+
+:root {
+    color-scheme: light;
+    --bg: #f6f7fb;
+    --surface: #ffffff;
+    --surface-2: #f0f2f7;
+    --surface-3: #e8ebf2;
+    --text: #171923;
+    --muted: #697083;
+    --border: #dfe3ec;
+    --border-strong: #c8ceda;
+    --accent: #635bff;
+    --accent-hover: #5148ef;
+    --accent-soft: #eeecff;
+    --success: #159570;
+    --success-soft: #e4f7f0;
+    --danger: #d64b5d;
+    --danger-hover: #bd3d4e;
+    --danger-soft: #fdebed;
+    --warning: #b7791f;
+    --warning-soft: #fff4d8;
+    --shadow-sm: 0 1px 2px rgb(16 24 40 / 0.04), 0 2px 8px rgb(16 24 40 / 0.04);
+    --shadow-md: 0 10px 30px rgb(16 24 40 / 0.08);
+    --radius-sm: 8px;
+    --radius: 12px;
+    --radius-lg: 18px;
+    --content: 1080px;
+    --narrow: 720px;
+    --transition: 160ms ease;
+}
+
+html[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0b0d12;
+    --surface: #12151c;
+    --surface-2: #181c25;
+    --surface-3: #202531;
+    --text: #f2f4f8;
+    --muted: #9aa3b5;
+    --border: #292f3b;
+    --border-strong: #3a4251;
+    --accent: #8b83ff;
+    --accent-hover: #9b94ff;
+    --accent-soft: #272442;
+    --success: #35c79b;
+    --success-soft: #14382f;
+    --danger: #f06a78;
+    --danger-hover: #ff7b88;
+    --danger-soft: #3c1e25;
+    --warning: #e1ad54;
+    --warning-soft: #3b301d;
+    --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.25);
+    --shadow-md: 0 16px 40px rgb(0 0 0 / 0.28);
+}
+
+/* Reset / base */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    min-height: 100%;
+    background: var(--bg);
+    transition: background-color var(--transition), color var(--transition);
+}
+
+body {
+    min-height: 100vh;
+    margin: 0;
+    padding: 40px 24px 64px;
+    background:
+        radial-gradient(circle at 50% -20%, rgb(99 91 255 / 0.08), transparent 36rem),
+        var(--bg);
+    color: var(--text);
+    font-family:
+        Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    transition: background-color var(--transition), color var(--transition);
+}
+
+body > * {
+    max-width: var(--content);
+    margin-left: auto;
+    margin-right: auto;
+}
+
+a {
+    color: var(--accent);
+    text-decoration: none;
+    transition: color var(--transition);
+}
+
+a:hover {
+    color: var(--accent-hover);
+    text-decoration: underline;
+}
+
+h1,
+h2,
+h3 {
+    line-height: 1.2;
+    letter-spacing: -0.025em;
+}
+
+h1 {
+    margin: 0 0 12px;
+    font-size: clamp(2rem, 5vw, 3rem);
+}
+
+h2 {
+    margin: 32px 0 14px;
+    font-size: 1.45rem;
+}
+
+h3 {
+    margin: 22px 0 10px;
+    font-size: 1.05rem;
+}
+
+p {
+    color: var(--muted);
+}
+
+small {
+    color: var(--muted);
+}
+
+hr {
+    border: 0;
+    border-top: 1px solid var(--border);
+    margin: 36px 0;
+}
+
+/* Page shell */
+body::before {
+    content: "KWIZZ";
+    position: fixed;
+    top: 18px;
+    left: 24px;
+    z-index: 20;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    color: var(--muted);
+    pointer-events: none;
+}
+
+
+/* Theme button is created by theme.js */
+.kwizz-theme-toggle {
+    position: fixed;
+    top: 14px;
+    right: 18px;
+    z-index: 1001;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: var(--shadow-sm);
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+}
+
+.kwizz-theme-toggle:hover {
+    transform: translateY(-1px);
+    border-color: var(--border-strong);
+    background: var(--surface-2);
+}
+
+body > .kwizz-theme-toggle {
+    max-width: none;
+    margin: 0;
+}
+
+/* Buttons */
+button,
+.btn {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 42px;
+    padding: 9px 16px;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    background: var(--accent);
+    color: #fff;
+    font: inherit;
+    font-weight: 650;
+    line-height: 1.2;
+    text-decoration: none;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgb(16 24 40 / 0.12);
+    transition:
+        transform var(--transition),
+        background-color var(--transition),
+        border-color var(--transition),
+        box-shadow var(--transition);
+}
+
+button:hover,
+.btn:hover {
+    background: var(--accent-hover);
+    color: #fff;
+    text-decoration: none;
+    transform: translateY(-1px);
+}
+
+button:active,
+.btn:active {
+    transform: translateY(0);
+}
+
+button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+    outline: 3px solid rgb(99 91 255 / 0.25);
+    outline-offset: 2px;
+}
+
+button[type="submit"][class*="delete"],
+.delete-btn,
+.delete-form button {
+    background: transparent;
+    color: var(--danger);
+    border-color: color-mix(in srgb, var(--danger) 35%, var(--border));
+    box-shadow: none;
+}
+
+button[type="submit"][class*="delete"]:hover,
+.delete-btn:hover,
+.delete-form button:hover {
+    background: var(--danger-soft);
+    color: var(--danger-hover);
+    border-color: var(--danger);
+}
+
+/* Forms */
+form {
+    margin: 18px 0;
+}
+
+label {
+    display: block;
+    margin: 16px 0 7px;
+    color: var(--text);
+    font-size: 0.9rem;
+    font-weight: 650;
+}
+
+input,
+textarea,
+select {
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    transition:
+        border-color var(--transition),
+        box-shadow var(--transition),
+        background-color var(--transition);
+}
+
+textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+input:hover,
+textarea:hover,
+select:hover {
+    border-color: var(--border-strong);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgb(99 91 255 / 0.12);
+    outline: none;
+}
+
+form button {
+    margin-top: 18px;
+}
+
+/* Tables */
+table {
+    width: 100%;
+    margin-top: 22px;
+    border-collapse: separate;
+    border-spacing: 0;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+}
+
+th,
+td {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    vertical-align: middle;
+}
+
+th {
+    background: var(--surface-2);
+    color: var(--muted);
+    font-size: 0.78rem;
+    font-weight: 750;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+tr:last-child td {
+    border-bottom: 0;
+}
+
+tbody tr {
+    transition: background-color var(--transition);
+}
+
+tbody tr:hover {
+    background: var(--surface-2);
+}
+
+/* Quiz list */
+body:has(table) {
+    max-width: var(--content);
+}
+
+body:has(table) h1 {
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--border);
+}
+
+body:has(table) > .btn,
+body > a.btn {
+    margin-top: 10px;
+}
+
+/* Question cards */
+.question {
+    margin: 14px 0;
+    padding: 20px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+}
+
+.question strong {
+    display: block;
+    color: var(--text);
+    font-size: 1rem;
+}
+
+.question ul {
+    margin: 14px 0;
+    padding: 0;
+    list-style: none;
+}
+
+.question li {
+    margin: 7px 0;
+    padding: 9px 12px;
+    border-radius: var(--radius-sm);
+    background: var(--surface-2);
+    color: var(--muted);
+}
+
+.question li.correct {
+    background: var(--success-soft);
+    color: var(--success);
+    font-weight: 750;
+}
+
+.question form {
+    margin-bottom: 0;
+}
+
+.empty {
+    padding: 24px;
+    border: 1px dashed var(--border-strong);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--muted);
+}
+
+/* Authentication */
+body:has(form[action$="/login"]),
+body:has(form[action$="/register"]) {
+    max-width: 480px;
+    padding-top: 110px;
+}
+
+body:has(form[action$="/login"]) h1,
+body:has(form[action$="/register"]) h1 {
+    margin-bottom: 24px;
+}
+
+body:has(form[action$="/login"]) form,
+body:has(form[action$="/register"]) form {
+    padding: 28px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    box-shadow: var(--shadow-md);
+}
+
+body:has(form[action$="/login"]) form button,
+body:has(form[action$="/register"]) form button {
+    width: 100%;
+}
+
+body:has(form[action$="/login"]) form + a,
+body:has(form[action$="/register"]) form + a {
+    display: block;
+    margin-top: 18px;
+    text-align: center;
+    font-size: 0.9rem;
+}
+
+/* Flash/error messages */
+body > p[th\:if],
+body > p:has(+ form) {
+    color: var(--muted);
+}
+
+p[th\:if][th\:text],
+p:has(+ form):not(.empty) {
+    padding: 11px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface-2);
+}
+
+/* Landing */
+body:has(h1:first-child) {
+    max-width: 900px;
+}
+
+body:has(h1:first-child) h1 {
+    margin-top: 16vh;
+    font-size: clamp(3rem, 10vw, 6.5rem);
+    letter-spacing: -0.07em;
+}
+
+body:has(h1:first-child) h1 + p {
+    max-width: 560px;
+    margin-bottom: 30px;
+    font-size: 1.2rem;
+}
+
+body:has(h1:first-child) a:not(.btn) {
+    display: inline-flex;
+    margin: 6px 8px 6px 0;
+    padding: 10px 15px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+    font-weight: 650;
+}
+
+body:has(h1:first-child) a:not(.btn):hover {
+    background: var(--surface-2);
+}
+
+/* Join */
+body:has(form[action$="/join"]) {
+    max-width: 480px;
+    padding-top: 110px;
+}
+
+body:has(form[action$="/join"]) form {
+    padding: 28px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    box-shadow: var(--shadow-md);
+}
+
+body:has(form[action$="/join"]) form button {
+    width: 100%;
+}
+
+/* Live host dashboard */
+body:has(#participant-list) {
+    max-width: 1100px;
+}
+
+body:has(#participant-list) > img {
+    display: block;
+    width: min(300px, 100%);
+    height: auto;
+    margin: 18px 0;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: #fff;
+    box-shadow: var(--shadow-md);
+}
+
+body:has(#participant-list) #participant-list,
+body:has(#participant-list) #leaderboard-list {
+    margin: 12px 0 24px;
+    padding: 0;
+    list-style: none;
+}
+
+body:has(#participant-list) #participant-list li {
+    display: inline-flex;
+    margin: 5px;
+    padding: 7px 11px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: var(--shadow-sm);
+}
+
+body:has(#leaderboard-section) #leaderboard-section {
+    padding: 24px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    box-shadow: var(--shadow-md);
+}
+
+#leaderboard-list {
+    counter-reset: leaderboard;
+}
+
+#leaderboard-list li {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 13px 4px;
+    border-bottom: 1px solid var(--border);
+}
+
+#leaderboard-list li:last-child {
+    border-bottom: 0;
+}
+
+/* Player */
+#waiting,
+#finished,
+#question-box,
+#leaderboard-section,
+#between-rounds {
+    max-width: 760px;
+    margin: 30px auto;
+}
+
+#waiting,
+#finished,
+#leaderboard-section,
+#between-rounds {
+    padding: 28px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    box-shadow: var(--shadow-md);
+}
+
+#question-box {
+    padding: 34px;
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    background:
+        linear-gradient(145deg, var(--surface), var(--surface-2));
+    box-shadow: var(--shadow-md);
+}
+
+#question-progress {
+    margin: 0;
+    color: var(--accent);
+    font-size: 0.82rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+#question-text {
+    margin: 20px 0 28px;
+    font-size: clamp(1.6rem, 4vw, 2.5rem);
+}
+
+#timer {
+    display: inline-grid;
+    min-width: 2.4em;
+    min-height: 2.4em;
+    margin-left: 5px;
+    padding: 4px 8px;
+    place-items: center;
+    border-radius: 999px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 800;
+}
+
+.option-btn {
+    width: 100%;
+    min-height: 58px;
+    margin: 8px 0;
+    padding: 14px 18px;
+    justify-content: flex-start;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: none;
+    text-align: left;
+}
+
+.option-btn:hover:not(:disabled) {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    color: var(--text);
+}
+
+#answer-feedback {
+    max-width: 760px;
+    margin: 18px auto;
+    text-align: center;
+    color: var(--success);
+    font-weight: 700;
+}
+
+#participant-list {
+    padding-left: 20px;
+}
+
+/* 404 */
+body:has(h1) h1:first-child + p {
+    margin-bottom: 24px;
+}
+
+/* Utility-ish inline forms */
+form[style*="display:inline"] {
+    display: inline-flex !important;
+    margin-right: 8px;
+}
+
+form[style*="display:inline"] button {
+    margin-top: 0;
+}
+
+/* Mobile */
+@media (max-width: 700px) {
+    body {
+        padding: 72px 16px 40px;
+    }
+
+    body::before {
+        left: 16px;
+        top: 22px;
+    }
+
+    h1 {
+        font-size: 2.25rem;
+    }
+
+    table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+
+    th,
+    td {
+        padding: 12px;
+    }
+
+    #question-box {
+        padding: 22px;
+        border-radius: var(--radius-lg);
+    }
+
+    #question-text {
+        font-size: 1.55rem;
+    }
+
+    body:has(h1:first-child) h1 {
+        margin-top: 8vh;
+        font-size: 4rem;
+    }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+    }
+}

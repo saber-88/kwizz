@@ -2,9 +2,12 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
     <title>Playing</title>
+    <script th:src="@{/js/theme.js}" defer></script>
 </head>
-<body>
+<body class="page-play">
 
 <h1>
     Hi, <span th:text="${participant.nickname}"></span>
@@ -28,18 +31,29 @@
     <h2>Quiz finished — thanks for playing!</h2>
 </div>
 
+
 <div id="question-box"
      th:style="${quizSession.status != null and quizSession.status.name() == 'IN_PROGRESS'}
         ? ''
         : 'display:none'">
 
     <p id="question-progress"></p>
+    <p>Time left: <span id="timer"></span>s</p>
     <h2 id="question-text"></h2>
 
     <button class="option-btn" data-option="0" id="optA"></button>
     <button class="option-btn" data-option="1" id="optB"></button>
     <button class="option-btn" data-option="2" id="optC"></button>
     <button class="option-btn" data-option="3" id="optD"></button>
+</div>
+
+<div id="leaderboard-section" style="display:none">
+    <h3>Leaderboard</h3>
+    <ol id="leaderboard-list"></ol>
+</div>
+
+<div id="between-rounds" style="display:none">
+    <p>Waiting for the host to continue…</p>
 </div>
 
 <p id="answer-feedback"></p>
@@ -50,58 +64,71 @@
 
     const sessionId = /*[[${quizSession.id}]]*/ 0;
     const participantToken = /*[[${participant.sessionToken}]]*/ '';
+    let questionStartTime = 0;
+    let countdownInterval = null;
 
-    console.log("🔥 PLAYER SCRIPT STARTED");
+    /*[# th:if="${quizSession.status.name() == 'IN_PROGRESS' and !showingLeaderboard}"]*/
+    renderQuestion({
+        questionId: /*[[${quizSession.quiz.questions[quizSession.currentQuestionIndex].id}]]*/ 0,
+        text: /*[[${quizSession.quiz.questions[quizSession.currentQuestionIndex].text}]]*/ '',
+        optionA: /*[[${quizSession.quiz.questions[quizSession.currentQuestionIndex].optionA}]]*/ '',
+        optionB: /*[[${quizSession.quiz.questions[quizSession.currentQuestionIndex].optionB}]]*/ '',
+        optionC: /*[[${quizSession.quiz.questions[quizSession.currentQuestionIndex].optionC}]]*/ '',
+        optionD: /*[[${quizSession.quiz.questions[quizSession.currentQuestionIndex].optionD}]]*/ '',
+        timeLimitSeconds: /*[[${quizSession.quiz.questions[quizSession.currentQuestionIndex].timeLimitSeconds}]]*/ 20,
+        questionNumber: /*[[${quizSession.currentQuestionIndex + 1}]]*/ 1,
+        totalQuestions: /*[[${quizSession.quiz.questions.size()}]]*/ 1
+    });
+    /*[/]*/
 
-    console.log("🔥 SESSION ID =", sessionId);
+    /*[# th:if="${quizSession.status.name() == 'IN_PROGRESS' and showingLeaderboard}"]*/
+    renderLeaderboard({ entries: /*[[${leaderboard}]]*/ [] });
+    /*[/]*/
 
     const socket = new SockJS('/ws');
-
-    console.log("🔥 SOCKJS CREATED");
-
     const stompClient = new StompJs.Client({
         webSocketFactory: () => socket,
-
         onConnect: () => {
 
-
-            stompClient.subscribe(
-                '/topic/session/' + sessionId + '/question',
-                (message) => {
-                    const data = JSON.parse(message.body);
-                    if (data.finished) {
-                        showFinished();
-                    } else {
-                        renderQuestion(data);
-                    }
+            stompClient.subscribe('/topic/session/' + sessionId + '/question', (message) => {
+                const data = JSON.parse(message.body);
+                if (data.finished) {
+                    showFinished();
+                } else {
+                    renderQuestion(data);
                 }
-            );
+            });
 
-            stompClient.subscribe(
-                '/topic/session/' + sessionId + '/participants',
-                (message) => {
-                    const nicknames = JSON.parse(message.body);
-                    const countEl = document.getElementById('participant-count');
-                    const listEl = document.getElementById('participant-list');
-                    if (!countEl || !listEl) return;
+            stompClient.subscribe('/topic/session/' + sessionId + '/leaderboard', (message) => {
+                renderLeaderboard(JSON.parse(message.body));
+            });
 
-                    countEl.textContent = nicknames.length;
-                    listEl.innerHTML = '';
-                    nicknames.forEach(name => {
-                        const li = document.createElement('li');
-                        li.textContent = name;
-                        listEl.appendChild(li);
-                    });
-                }
-            );
+            stompClient.subscribe('/topic/session/' + sessionId + '/participants', (message) => {
+                const nicknames = JSON.parse(message.body);
+                const countEl = document.getElementById('participant-count');
+                const listEl = document.getElementById('participant-list');
+                if (!countEl || !listEl) return;
+                countEl.textContent = nicknames.length;
+                listEl.innerHTML = '';
+                nicknames.forEach(name => {
+                    const li = document.createElement('li');
+                    li.textContent = name;
+                    listEl.appendChild(li);
+                });
+            });
         }
     });
-
     stompClient.activate();
 
-    function renderQuestion(data) {
+    function hideAllPhases() {
         document.getElementById('waiting').style.display = 'none';
         document.getElementById('finished').style.display = 'none';
+        document.getElementById('question-box').style.display = 'none';
+        document.getElementById('leaderboard-section').style.display = 'none';
+    }
+
+    function renderQuestion(data) {
+        hideAllPhases();
         document.getElementById('question-box').style.display = '';
 
         document.getElementById('question-progress').textContent =
@@ -114,6 +141,10 @@
         setOption('optD', 'D', data.optionD, data.questionId);
 
         document.getElementById('answer-feedback').textContent = '';
+        document.querySelectorAll('.option-btn').forEach(btn => btn.disabled = false);
+
+        questionStartTime = Date.now();
+        startCountdown(data.timeLimitSeconds);
     }
 
     function setOption(id, letter, text, questionId) {
@@ -123,20 +154,55 @@
     }
 
     function showFinished() {
-        document.getElementById('waiting').style.display = 'none';
-        document.getElementById('question-box').style.display = 'none';
+        hideAllPhases();
         document.getElementById('finished').style.display = '';
+    }
+
+    function renderLeaderboard(data) {
+        hideAllPhases();
+        clearInterval(countdownInterval);
+        document.getElementById('leaderboard-section').style.display = '';
+
+        const listEl = document.getElementById('leaderboard-list');
+        listEl.innerHTML = '';
+        data.entries.forEach(entry => {
+            const li = document.createElement('li');
+            li.textContent = entry.nickname + ' — ' + entry.score;
+            listEl.appendChild(li);
+        });
+    }
+
+    function startCountdown(seconds) {
+        clearInterval(countdownInterval);
+        let remaining = seconds;
+        document.getElementById('timer').textContent = remaining;
+        countdownInterval = setInterval(() => {
+            remaining--;
+            document.getElementById('timer').textContent = Math.max(remaining, 0);
+            if (remaining <= 0) clearInterval(countdownInterval);
+        }, 1000);
     }
 
     document.querySelectorAll('.option-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             const questionId = btn.dataset.questionId;
-            const option = btn.dataset.option;
+            if (!questionId) return;
 
-            document.getElementById('answer-feedback').textContent =
-                'Answer submitted (scoring not built yet).';
+            const selectedOption = parseInt(btn.dataset.option);
+            const answerTimeMs = Date.now() - questionStartTime;
 
-            console.log('Question:', questionId, 'Option:', option);
+            document.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
+            document.getElementById('answer-feedback').textContent = 'Answer submitted!';
+
+            stompClient.publish({
+                destination: '/app/session/' + sessionId + '/answer',
+                body: JSON.stringify({
+                    participantToken: participantToken,
+                    questionId: parseInt(questionId),
+                    selectedOption: selectedOption,
+                    timeTakenMs: answerTimeMs
+                })
+            });
         });
     });
 

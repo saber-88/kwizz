@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <title>My quizzes</title>
+    <style>
+        body { font-family: sans-serif; max-width: 720px; margin: 40px auto; color: #000; padding: 0 16px; }
+        h1 { border-bottom: 2px solid #000; padding-bottom: 8px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #000; padding: 8px 12px; text-align: left; }
+        a { color: #000; }
+        .btn { display: inline-block; padding: 8px 16px; border: 1px solid #000; text-decoration: none; margin-top: 16px; }
+        .empty { color: #555; margin-top: 20px; }
+    </style>
+</head>
+<body>
+<h1>My quizzes</h1>
+<a class="btn" th:href="@{/quizzes/new}">+ New quiz</a>
+
+<p class="empty" th:if="${#lists.isEmpty(quizzes)}">
+    No quizzes yet - create your first one above.
+</p>
+
+<table th:if="${!#lists.isEmpty(quizzes)}">
+    <thead>
+    <tr>
+        <th>Title</th>
+        <th>Description</th>
+        <th>Questions</th>
+        <th></th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="quiz : ${quizzes}">
+        <td th:text="${quiz.title}"></td>
+        <td th:text="${quiz.description}"></td>
+        <td th:text="${quiz.questions.size()}"></td>
+        <td><a th:href="@{/quizzes/{id}(id=${quiz.id})}">Open</a></td>
+    </tr>
+    </tbody>
+</table>
+</body>
+</html>

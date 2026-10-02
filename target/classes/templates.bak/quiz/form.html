@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <title>New quiz</title>
+    <style>
+        body { font-family: sans-serif; max-width: 520px; margin: 40px auto; color: #000; padding: 0 16px; }
+        label { display: block; margin-top: 16px; font-weight: bold; }
+        input, textarea { width: 100%; padding: 8px; border: 1px solid #000; margin-top: 4px; box-sizing: border-box; font-family: inherit; }
+        button { margin-top: 20px; padding: 8px 16px; border: 1px solid #000; background: #fff; cursor: pointer; }
+        a { color: #000; }
+    </style>
+</head>
+<body>
+<a th:href="@{/quizzes}">&larr; Back to my quizzes</a>
+<h1>New quiz</h1>
+<form th:action="@{/quizzes}" method="post">
+    <label for="title">Title</label>
+    <input type="text" id="title" name="title" required>
+
+    <label for="description">Description</label>
+    <textarea id="description" name="description" rows="3"></textarea>
+
+    <button type="submit">Create quiz</button>
+</form>
+</body>
+</html>

@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Playing</title>
+</head>
+<body>
+
+<h1>
+    Hi, <span th:text="${participant.nickname}"></span>
+</h1>
+
+<div id="waiting"
+     th:style="${quizSession.status != null and quizSession.status.name() == 'WAITING'}
+        ? ''
+        : 'display:none'">
+    <p>Waiting for the host to start…</p>
+    <h3>Players joined: <span id="participant-count" th:text="${quizSession.participants.size()}"></span></h3>
+    <ul id="participant-list">
+        <li th:each="p : ${quizSession.participants}" th:text="${p.nickname}"></li>
+    </ul>
+</div>
+
+<div id="finished"
+     th:style="${quizSession.status != null and quizSession.status.name() == 'FINISHED'}
+        ? ''
+        : 'display:none'">
+    <h2>Quiz finished — thanks for playing!</h2>
+</div>
+
+
+<div id="question-box"
+     th:style="${quizSession.status != null and quizSession.status.name() == 'IN_PROGRESS'}
+        ? ''
+        : 'display:none'">
+
+    <p id="question-progress"></p>
+    <p>Time left: <span id="timer"></span>s</p>
+    <h2 id="question-text"></h2>
+
+    <button class="option-btn" data-option="0" id="optA"></button>
+    <button class="option-btn" data-option="1" id="optB"></button>
+    <button class="option-btn" data-option="2" id="optC"></button>
+    <button class="option-btn" data-option="3" id="optD"></button>
+</div>
+
+<div id="leaderboard-section" style="display:none">
+    <h3>Leaderboard</h3>
+    <ol id="leaderboard-list"></ol>
+</div>
+
+<div id="between-rounds" style="display:none">
+    <p>Waiting for the host to continue…</p>
+</div>
+
+<p id="answer-feedback"></p>
+
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7/bundles/stomp.umd.min.js"></script>
+<script th:inline="javascript">
+
+    const sessionId = /*[[${quizSession.id}]]*/ 0;
+    const participantToken = /*[[${participant.sessionToken}]]*/ '';
+    let questionStartTime = 0;
+    let countdownInterval = null;
+
+    /*[# th:if="${quizSession.status.name() == 'IN_PROGRESS' and !showingLeaderboard}"]*/
+    renderQuestion({
+        questionId: /*[[${quizSession.quiz.questions[quizSession.currentQuestionIndex].id}]]*/ 0,
+        text: /*[[${quizSession.quiz.questions[quizSession.currentQuestionIndex].text}]]*/ '',
+        optionA: /*[[${quizSession.quiz.questions[quizSession.currentQuestionIndex].optionA}]]*/ '',
+        optionB: /*[[${quizSession.quiz.questions[quizSession.currentQuestionIndex].optionB}]]*/ '',
+        optionC: /*[[${quizSession.quiz.questions[quizSession.currentQuestionIndex].optionC}]]*/ '',
+        optionD: /*[[${quizSession.quiz.questions[quizSession.currentQuestionIndex].optionD}]]*/ '',
+        timeLimitSeconds: /*[[${quizSession.quiz.questions[quizSession.currentQuestionIndex].timeLimitSeconds}]]*/ 20,
+        questionNumber: /*[[${quizSession.currentQuestionIndex + 1}]]*/ 1,
+        totalQuestions: /*[[${quizSession.quiz.questions.size()}]]*/ 1
+    });
+    /*[/]*/
+
+    /*[# th:if="${quizSession.status.name() == 'IN_PROGRESS' and showingLeaderboard}"]*/
+    renderLeaderboard({ entries: /*[[${leaderboard}]]*/ [] });
+    /*[/]*/
+
+    const socket = new SockJS('/ws');
+    const stompClient = new StompJs.Client({
+        webSocketFactory: () => socket,
+        onConnect: () => {
+
+            stompClient.subscribe('/topic/session/' + sessionId + '/question', (message) => {
+                const data = JSON.parse(message.body);
+                if (data.finished) {
+                    showFinished();
+                } else {
+                    renderQuestion(data);
+                }
+            });
+
+            stompClient.subscribe('/topic/session/' + sessionId + '/leaderboard', (message) => {
+                renderLeaderboard(JSON.parse(message.body));
+            });
+
+            stompClient.subscribe('/topic/session/' + sessionId + '/participants', (message) => {
+                const nicknames = JSON.parse(message.body);
+                const countEl = document.getElementById('participant-count');
+                const listEl = document.getElementById('participant-list');
+                if (!countEl || !listEl) return;
+                countEl.textContent = nicknames.length;
+                listEl.innerHTML = '';
+                nicknames.forEach(name => {
+                    const li = document.createElement('li');
+                    li.textContent = name;
+                    listEl.appendChild(li);
+                });
+            });
+        }
+    });
+    stompClient.activate();
+
+    function hideAllPhases() {
+        document.getElementById('waiting').style.display = 'none';
+        document.getElementById('finished').style.display = 'none';
+        document.getElementById('question-box').style.display = 'none';
+        document.getElementById('leaderboard-section').style.display = 'none';
+    }
+
+    function renderQuestion(data) {
+        hideAllPhases();
+        document.getElementById('question-box').style.display = '';
+
+        document.getElementById('question-progress').textContent =
+            'Question ' + data.questionNumber + ' of ' + data.totalQuestions;
+        document.getElementById('question-text').textContent = data.text;
+
+        setOption('optA', 'A', data.optionA, data.questionId);
+        setOption('optB', 'B', data.optionB, data.questionId);
+        setOption('optC', 'C', data.optionC, data.questionId);
+        setOption('optD', 'D', data.optionD, data.questionId);
+
+        document.getElementById('answer-feedback').textContent = '';
+        document.querySelectorAll('.option-btn').forEach(btn => btn.disabled = false);
+
+        questionStartTime = Date.now();
+        startCountdown(data.timeLimitSeconds);
+    }
+
+    function setOption(id, letter, text, questionId) {
+        const el = document.getElementById(id);
+        el.textContent = letter + '. ' + text;
+        el.dataset.questionId = questionId;
+    }
+
+    function showFinished() {
+        hideAllPhases();
+        document.getElementById('finished').style.display = '';
+    }
+
+    function renderLeaderboard(data) {
+        hideAllPhases();
+        clearInterval(countdownInterval);
+        document.getElementById('leaderboard-section').style.display = '';
+
+        const listEl = document.getElementById('leaderboard-list');
+        listEl.innerHTML = '';
+        data.entries.forEach(entry => {
+            const li = document.createElement('li');
+            li.textContent = entry.nickname + ' — ' + entry.score;
+            listEl.appendChild(li);
+        });
+    }
+
+    function startCountdown(seconds) {
+        clearInterval(countdownInterval);
+        let remaining = seconds;
+        document.getElementById('timer').textContent = remaining;
+        countdownInterval = setInterval(() => {
+            remaining--;
+            document.getElementById('timer').textContent = Math.max(remaining, 0);
+            if (remaining <= 0) clearInterval(countdownInterval);
+        }, 1000);
+    }
+
+    document.querySelectorAll('.option-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const questionId = btn.dataset.questionId;
+            if (!questionId) return;
+
+            const selectedOption = parseInt(btn.dataset.option);
+            const answerTimeMs = Date.now() - questionStartTime;
+
+            document.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
+            document.getElementById('answer-feedback').textContent = 'Answer submitted!';
+
+            stompClient.publish({
+                destination: '/app/session/' + sessionId + '/answer',
+                body: JSON.stringify({
+                    participantToken: participantToken,
+                    questionId: parseInt(questionId),
+                    selectedOption: selectedOption,
+                    timeTakenMs: answerTimeMs
+                })
+            });
+        });
+    });
+
+</script>
+
+</body>
+</html>

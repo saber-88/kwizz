@@ -2,6 +2,8 @@ package com.kwizz.controller;
 
 import com.kwizz.entity.Participant;
 import com.kwizz.service.ParticipantService;
+import com.kwizz.service.QuizGameManager;
+import com.kwizz.service.ScoreService;
 import com.kwizz.service.SessionService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -15,11 +17,15 @@ public class JoinController {
     private final ParticipantService participantService;
     private final SessionService sessionService;
     private final SimpMessagingTemplate messagingTemplate;
+    private final ScoreService scoreService;
+    private final QuizGameManager quizGameManager;
 
-    public JoinController(ParticipantService participantService, SessionService sessionService, SimpMessagingTemplate messagingTemplate) {
+    public JoinController(ParticipantService participantService, SessionService sessionService, SimpMessagingTemplate messagingTemplate, ScoreService scoreService, QuizGameManager quizGameManager) {
         this.participantService = participantService;
         this.sessionService = sessionService;
         this.messagingTemplate = messagingTemplate;
+        this.scoreService = scoreService;
+        this.quizGameManager = quizGameManager;
     }
 
     // The "code" query param lets a scanned QR (which encodes
@@ -58,10 +64,12 @@ public class JoinController {
     public String playScreen(@PathVariable Long sessionId, HttpSession session, Model model) {
         String token = (String) session.getAttribute("participantToken");
         if (token == null) {
-            return "redirect:/join"; // never joined - send them back to start
+            return "redirect:/join";
         }
         model.addAttribute("participant", participantService.getByToken(token));
         model.addAttribute("quizSession", sessionService.getSession(sessionId));
+        model.addAttribute("showingLeaderboard", quizGameManager.isShowingLeaderboard(sessionId));
+        model.addAttribute("leaderboard", scoreService.getLeaderboard(sessionId).getEntries());
         return "play";
     }
 }

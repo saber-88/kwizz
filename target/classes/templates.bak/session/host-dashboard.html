@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <title>Live session</title>
+</head>
+<body>
+<a th:href="@{/quizzes/{id}(id=${quizSession.quiz.id})}">&larr; Back to quiz</a>
+<h1 th:text="${quizSession.quiz.title}"></h1>
+
+<div th:if="${quizSession.status.name() == 'WAITING'}">
+    <h2>Join code: <span th:text="${quizSession.joinCode}"></span></h2>
+    <img th:src="@{/sessions/{id}/qr.png(id=${quizSession.id})}" alt="QR code to join" width="300" height="300">
+    <p>Waiting to start…</p>
+
+    <h3>Participants joined: <span id="participant-count" th:text="${quizSession.participants.size()}"></span></h3>
+    <ul id="participant-list">
+        <li th:each="p : ${quizSession.participants}" th:text="${p.nickname}"></li>
+    </ul>
+
+    <form th:action="@{/sessions/{id}/next(id=${quizSession.id})}" method="post">
+        <button type="submit">Start quiz</button>
+    </form>
+</div>
+
+<div th:if="${quizSession.status.name() == 'IN_PROGRESS'}">
+
+    <div id="question-content" th:style="${showingLeaderboard} ? 'display:none' : ''">
+        <p>Question <span th:text="${quizSession.currentQuestionIndex + 1}"></span> of
+            <span th:text="${quizSession.quiz.questions.size()}"></span></p>
+        <p>Time left: <span id="timer"></span>s</p>
+        <h2 th:text="${quizSession.quiz.questions[quizSession.currentQuestionIndex].text}"></h2>
+        <ul>
+            <li th:text="'A. ' + ${quizSession.quiz.questions[quizSession.currentQuestionIndex].optionA}"></li>
+            <li th:text="'B. ' + ${quizSession.quiz.questions[quizSession.currentQuestionIndex].optionB}"></li>
+            <li th:text="'C. ' + ${quizSession.quiz.questions[quizSession.currentQuestionIndex].optionC}"></li>
+            <li th:text="'D. ' + ${quizSession.quiz.questions[quizSession.currentQuestionIndex].optionD}"></li>
+        </ul>
+        <form th:action="@{/sessions/{id}/next(id=${quizSession.id})}" method="post" style="display:inline">
+            <button type="submit">Next question</button>
+        </form>
+        <form th:action="@{/sessions/{id}/stop(id=${quizSession.id})}" method="post" style="display:inline"
+              onsubmit="return confirm('Stop this quiz now?');">
+            <button type="submit">Stop quiz</button>
+        </form>
+    </div>
+
+    <div id="leaderboard-section" th:style="${showingLeaderboard} ? '' : 'display:none'">
+        <h3>Leaderboard</h3>
+        <ol id="leaderboard-list">
+            <li th:each="e : ${leaderboard}" th:text="${e.nickname} + ' — ' + ${e.score}"></li>
+        </ol>
+        <form th:action="@{/sessions/{id}/next(id=${quizSession.id})}" method="post" style="display:inline">
+            <button type="submit">Next question</button>
+        </form>
+        <form th:action="@{/sessions/{id}/stop(id=${quizSession.id})}" method="post" style="display:inline"
+              onsubmit="return confirm('Stop this quiz now?');">
+            <button type="submit">Stop quiz</button>
+        </form>
+    </div>
+
+</div>
+
+<div th:if="${quizSession.status.name() == 'FINISHED'}">
+    <h2>Quiz finished</h2>
+    <p>This session has ended.</p>
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7/bundles/stomp.umd.min.js"></script>
+<script th:inline="javascript">
+
+    let countdownInterval = null;
+
+    /*[# th:if="${quizSession.status.name() == 'IN_PROGRESS' and !showingLeaderboard}"]*/
+    startCountdown(/*[[${quizSession.quiz.questions[quizSession.currentQuestionIndex].timeLimitSeconds}]]*/ 20);
+    /*[/]*/
+
+    function startCountdown(seconds) {
+        clearInterval(countdownInterval);
+        let remaining = seconds;
+        const el = document.getElementById('timer');
+        if (!el) return;
+        el.textContent = remaining;
+        countdownInterval = setInterval(() => {
+            remaining--;
+            el.textContent = Math.max(remaining, 0);
+            if (remaining <= 0) clearInterval(countdownInterval);
+        }, 1000);
+    }
+
+
+    const sessionId = /*[[${quizSession.id}]]*/ 0;
+
+    const socket = new SockJS('/ws');
+    const stompClient = new StompJs.Client({
+        webSocketFactory: () => socket,
+
+        onConnect: () => {
+            stompClient.subscribe('/topic/session/' + sessionId + '/participants', (message) => {
+                const nicknames = JSON.parse(message.body);
+                const countEl = document.getElementById('participant-count');
+                const listEl = document.getElementById('participant-list');
+                if (!countEl || !listEl) return;
+
+                countEl.textContent = nicknames.length;
+                listEl.innerHTML = '';
+                nicknames.forEach(name => {
+                    const li = document.createElement('li');
+                    li.textContent = name;
+                    listEl.appendChild(li);
+                });
+            });
+
+            stompClient.subscribe('/topic/session/' + sessionId + '/leaderboard', (message) => {
+                const data = JSON.parse(message.body);
+                const listEl = document.getElementById('leaderboard-list');
+                listEl.innerHTML = '';
+                data.entries.forEach(entry => {
+                    const li = document.createElement('li');
+                    li.textContent = entry.nickname + ' — ' + entry.score;
+                    listEl.appendChild(li);
+                });
+            });
+
+            stompClient.subscribe('/topic/session/' + sessionId + '/leaderboard', (message) => {
+                const data = JSON.parse(message.body);
+                const listEl = document.getElementById('leaderboard-list');
+                const questionEl = document.getElementById('question-content');
+                const leaderboardEl = document.getElementById('leaderboard-section');
+                if (!listEl || !questionEl || !leaderboardEl) return;
+
+                listEl.innerHTML = '';
+                data.entries.forEach(entry => {
+                    const li = document.createElement('li');
+                    li.textContent = entry.nickname + ' — ' + entry.score;
+                    listEl.appendChild(li);
+                });
+
+                clearInterval(countdownInterval);
+                questionEl.style.display = 'none';
+                leaderboardEl.style.display = '';
+                // No auto-hide anymore - it stays until the host's next click reloads the page.
+            });
+        }
+    });
+    stompClient.activate();
+</script>
+</body>
+</html>
