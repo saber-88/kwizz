@@ -1,2 +1,9 @@
+# IntelliJ IDEA project settings folder
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# Spring Boot / Application configuration (contains sensitive secrets)
 application.properties
-.idea
+
