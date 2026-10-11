@@ -1,37 +1,35 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.w3.org/1999/xhtml">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" th:href="@{/css/style.css}">
-    <title>My quizzes</title>
-<script th:src="@{/js/theme.js}" defer></script>
-</head>
-<body class="page-quiz-list">
-<h1>My quizzes</h1>
-<a class="btn" th:href="@{/quizzes/new}">+ New quiz</a>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('My quizzes · Kwizz')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: navbar('host', 'quizzes')}"></header>
 
-<p class="empty" th:if="${#lists.isEmpty(quizzes)}">
-    No quizzes yet - create your first one above.
-</p>
+<main class="container">
+    <div class="page-head">
+        <div>
+            <h1>My quizzes</h1>
+            <p>Pick a quiz to edit its questions or start a live session.</p>
+        </div>
+        <a class="btn" th:href="@{/quizzes/new}">New quiz</a>
+    </div>
 
-<table th:if="${!#lists.isEmpty(quizzes)}">
-    <thead>
-    <tr>
-        <th>Title</th>
-        <th>Description</th>
-        <th>Questions</th>
-        <th></th>
-    </tr>
-    </thead>
-    <tbody>
-    <tr th:each="quiz : ${quizzes}">
-        <td th:text="${quiz.title}"></td>
-        <td th:text="${quiz.description}"></td>
-        <td th:text="${quiz.questions.size()}"></td>
-        <td><a th:href="@{/quizzes/{id}(id=${quiz.id})}">Open</a></td>
-    </tr>
-    </tbody>
-</table>
+    <div class="empty" th:if="${#lists.isEmpty(quizzes)}">
+        <h3>No quizzes yet</h3>
+        <p>Create your first quiz to start hosting.</p>
+        <a class="btn" th:href="@{/quizzes/new}">Create a quiz</a>
+    </div>
+
+    <div class="quiz-grid" th:if="${!#lists.isEmpty(quizzes)}">
+        <a class="card quiz-card" th:each="quiz : ${quizzes}" th:href="@{/quizzes/{id}(id=${quiz.id})}">
+            <h3 th:text="${quiz.title}">Quiz title</h3>
+            <p th:text="${#strings.isEmpty(quiz.description) ? 'No description' : quiz.description}">Description</p>
+            <div class="meta">
+                <span class="pill"
+                      th:text="${quiz.questions.size() == 1 ? '1 question' : quiz.questions.size() + ' questions'}">0 questions</span>
+                <span class="open">Open</span>
+            </div>
+        </a>
+    </div>
+</main>
 </body>
 </html>

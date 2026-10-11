@@ -1,24 +1,31 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.w3.org/1999/xhtml">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" th:href="@{/css/style.css}">
-    <title>Join a quiz</title>
-    <script th:src="@{/js/theme.js}" defer></script>
-</head>
-<body class="page-join">
-<h1>Join a quiz</h1>
-<p th:if="${error}" th:text="${error}"></p>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Join a quiz · Kwizz')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: navbar('public', 'join')}"></header>
 
-<form th:action="@{/join}" method="post">
-    <label>Join code</label>
-    <input type="text" name="code" th:value="${prefilledCode}" required>
+<main class="container narrow auth-wrap">
+    <div class="card auth-card">
+        <h1>Join a quiz</h1>
+        <p class="card-sub">Enter the code on the host's screen and pick a nickname.</p>
 
-    <label>Nickname</label>
-    <input type="text" name="nickname" required>
+        <div class="alert alert-error" role="alert" th:if="${error}" th:text="${error}"></div>
 
-    <button type="submit">Join</button>
-</form>
+        <form th:action="@{/join}" method="post">
+            <div class="field">
+                <label for="code">Join code</label>
+                <input class="code-input" type="text" id="code" name="code" th:value="${prefilledCode}"
+                       autocomplete="off" required>
+            </div>
+
+            <div class="field">
+                <label for="nickname">Nickname</label>
+                <input type="text" id="nickname" name="nickname" autocomplete="nickname" required>
+            </div>
+
+            <button type="submit" class="btn btn-block btn-lg">Join</button>
+        </form>
+    </div>
+</main>
 </body>
 </html>

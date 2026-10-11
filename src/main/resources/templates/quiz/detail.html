@@ -1,68 +1,134 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.w3.org/1999/xhtml">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" th:href="@{/css/style.css}">
-    <title th:text="${quiz.title}">Quiz</title>
-<script th:src="@{/js/theme.js}" defer></script>
-</head>
-<body class="page-quiz-detail">
-<a th:href="@{/quizzes}">&larr; Back to my quizzes</a>
-<h1 th:text="${quiz.title}"></h1>
-<p th:text="${quiz.description}"></p>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(${quiz.title + ' · Kwizz'})}"></head>
+<body>
+<header th:replace="~{fragments/layout :: navbar('host', 'quizzes')}"></header>
 
+<main class="container mid">
+    <a class="back-link" th:href="@{/quizzes}">&larr; Back to my quizzes</a>
 
-<form th:action="@{/quizzes/{id}/sessions(id=${quiz.id})}" method="post" style="display:inline">
-    <button type="submit">Start live session</button>
-</form>
+    <div class="page-head">
+        <div>
+            <h1 th:text="${quiz.title}">Quiz title</h1>
+            <p th:if="${!#strings.isEmpty(quiz.description)}" th:text="${quiz.description}">Description</p>
+        </div>
+        <form th:action="@{/quizzes/{id}/sessions(id=${quiz.id})}" method="post">
+            <button type="submit" class="btn btn-lg">Start live session</button>
+        </form>
+    </div>
 
-<h2>Questions</h2>
-<p class="empty" th:if="${#lists.isEmpty(quiz.questions)}">No questions yet - add one below.</p>
+    <!-- Questions -->
+    <div class="section-head">
+        <h2>Questions</h2>
+        <span class="pill" th:text="${quiz.questions.size()}">0</span>
+    </div>
 
-<div class="question" th:each="q, iter : ${quiz.questions}">
-    <strong th:text="${iter.count} + '. ' + ${q.text}"></strong>
-    <ul>
-        <li th:text="'A. ' + ${q.optionA}" th:classappend="${q.correctOption == 0} ? 'correct'"></li>
-        <li th:text="'B. ' + ${q.optionB}" th:classappend="${q.correctOption == 1} ? 'correct'"></li>
-        <li th:text="'C. ' + ${q.optionC}" th:classappend="${q.correctOption == 2} ? 'correct'"></li>
-        <li th:text="'D. ' + ${q.optionD}" th:classappend="${q.correctOption == 3} ? 'correct'"></li>
-    </ul>
-    <small th:text="'Time limit: ' + ${q.timeLimitSeconds} + 's (bold option is correct)'"></small>
-    <form th:action="@{/quizzes/{quizId}/questions/{qid}/delete(quizId=${quiz.id},qid=${q.id})}" method="post"
-          onsubmit="return confirm('Delete this question?');">
-        <button type="submit">Delete question</button>
-    </form>
-</div>
+    <div class="empty" th:if="${#lists.isEmpty(quiz.questions)}">
+        <h3>No questions yet</h3>
+        <p>Add your first question using the form below.</p>
+    </div>
 
-<hr>
+    <div class="card q-card" th:each="q, iter : ${quiz.questions}">
+        <div class="q-card-top">
+            <span class="q-num" th:text="${iter.count}">1</span>
+            <p class="q-text" th:text="${q.text}">Question</p>
+        </div>
 
-<h2>Add a question</h2>
-<form th:action="@{/quizzes/{id}/questions(id=${quiz.id})}" method="post">
-    <label for="text">Question text</label>
-    <input type="text" id="text" name="text" required>
+        <ul class="q-options">
+            <li th:classappend="${q.correctOption == 0} ? 'correct'">
+                <span class="key key-a">A</span><span class="opt-text" th:text="${q.optionA}"></span>
+            </li>
+            <li th:classappend="${q.correctOption == 1} ? 'correct'">
+                <span class="key key-b">B</span><span class="opt-text" th:text="${q.optionB}"></span>
+            </li>
+            <li th:classappend="${q.correctOption == 2} ? 'correct'">
+                <span class="key key-c">C</span><span class="opt-text" th:text="${q.optionC}"></span>
+            </li>
+            <li th:classappend="${q.correctOption == 3} ? 'correct'">
+                <span class="key key-d">D</span><span class="opt-text" th:text="${q.optionD}"></span>
+            </li>
+        </ul>
 
-    <label for="optionA">Option A</label>
-    <input type="text" id="optionA" name="optionA" required>
-    <label for="optionB">Option B</label>
-    <input type="text" id="optionB" name="optionB" required>
-    <label for="optionC">Option C</label>
-    <input type="text" id="optionC" name="optionC" required>
-    <label for="optionD">Option D</label>
-    <input type="text" id="optionD" name="optionD" required>
+        <div class="q-foot">
+            <small th:text="'Time limit: ' + ${q.timeLimitSeconds} + 's'"></small>
+            <form th:action="@{/quizzes/{quizId}/questions/{qid}/delete(quizId=${quiz.id},qid=${q.id})}" method="post"
+                  onsubmit="return confirm('Delete this question?');">
+                <button type="submit" class="btn btn-danger btn-sm">Delete question</button>
+            </form>
+        </div>
+    </div>
 
-    <label for="correctOption">Correct option (0 = A, 1 = B, 2 = C, 3 = D)</label>
-    <input type="number" id="correctOption" name="correctOption" min="0" max="3" required>
+    <!-- Add question -->
+    <div class="section-head"><h2>Add a question</h2></div>
 
-    <label for="timeLimitSeconds">Time limit (seconds)</label>
-    <input type="number" id="timeLimitSeconds" name="timeLimitSeconds" value="20">
+    <div class="card">
+        <form th:action="@{/quizzes/{id}/questions(id=${quiz.id})}" method="post">
+            <div class="field">
+                <label for="text">Question text</label>
+                <input type="text" id="text" name="text" required>
+            </div>
 
-    <button type="submit">Add question</button>
-</form>
+            <div class="form-grid">
+                <div class="field">
+                    <label for="optionA">Option A</label>
+                    <div class="input-with-key">
+                        <span class="key key-a" aria-hidden="true">A</span>
+                        <input type="text" id="optionA" name="optionA" required>
+                    </div>
+                </div>
+                <div class="field">
+                    <label for="optionB">Option B</label>
+                    <div class="input-with-key">
+                        <span class="key key-b" aria-hidden="true">B</span>
+                        <input type="text" id="optionB" name="optionB" required>
+                    </div>
+                </div>
+                <div class="field">
+                    <label for="optionC">Option C</label>
+                    <div class="input-with-key">
+                        <span class="key key-c" aria-hidden="true">C</span>
+                        <input type="text" id="optionC" name="optionC" required>
+                    </div>
+                </div>
+                <div class="field">
+                    <label for="optionD">Option D</label>
+                    <div class="input-with-key">
+                        <span class="key key-d" aria-hidden="true">D</span>
+                        <input type="text" id="optionD" name="optionD" required>
+                    </div>
+                </div>
+            </div>
 
-<form class="delete-form" th:action="@{/quizzes/{id}/delete(id=${quiz.id})}" method="post"
-      onsubmit="return confirm('Delete this quiz and all its questions?');">
-    <button type="submit" class="delete-btn">Delete this quiz</button>
-</form>
+            <div class="form-grid">
+                <!-- Still submits correctOption = 0..3, exactly like the old number input -->
+                <fieldset class="field">
+                    <legend>Correct answer</legend>
+                    <div class="segmented">
+                        <label class="seg tile-a"><input type="radio" name="correctOption" value="0" required><span>A</span></label>
+                        <label class="seg tile-b"><input type="radio" name="correctOption" value="1"><span>B</span></label>
+                        <label class="seg tile-c seg-c"><input type="radio" name="correctOption" value="2"><span>C</span></label>
+                        <label class="seg tile-d"><input type="radio" name="correctOption" value="3"><span>D</span></label>
+                    </div>
+                </fieldset>
+
+                <div class="field">
+                    <label for="timeLimitSeconds">Time limit (seconds)</label>
+                    <input type="number" id="timeLimitSeconds" name="timeLimitSeconds" value="20">
+                </div>
+            </div>
+
+            <button type="submit" class="btn">Add question</button>
+        </form>
+    </div>
+
+    <!-- Danger zone -->
+    <div class="card danger-zone">
+        <p>Deleting this quiz also deletes all of its questions.</p>
+        <form class="delete-form" th:action="@{/quizzes/{id}/delete(id=${quiz.id})}" method="post"
+              onsubmit="return confirm('Delete this quiz and all its questions?');">
+            <button type="submit" class="btn btn-danger delete-btn">Delete this quiz</button>
+        </form>
+    </div>
+</main>
 </body>
 </html>

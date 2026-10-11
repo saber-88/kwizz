@@ -1,27 +1,32 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.w3.org/1999/xhtml">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" th:href="@{/css/style.css}">
-    <title>Register</title>
-    <script th:src="@{/js/theme.js}" defer></script>
-</head>
-<body class="page-auth">
-<h1>Create a host account</h1>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Register · Kwizz')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: navbar('public', 'login')}"></header>
 
-<p th:if="${error}" th:text="${error}"></p>
+<main class="container narrow auth-wrap">
+    <div class="card auth-card">
+        <h1>Create a host account</h1>
+        <p class="card-sub">Hosts build quizzes and run them live for their class.</p>
 
-<form th:action="@{/register}" method="post">
-    <label>Username</label>
-    <input type="text" name="username" required>
+        <div class="alert alert-error" role="alert" th:if="${error}" th:text="${error}"></div>
 
-    <label>Password</label>
-    <input type="password" name="password" required>
+        <form th:action="@{/register}" method="post">
+            <div class="field">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" autocomplete="username" required>
+            </div>
 
-    <button type="submit">Register</button>
-</form>
+            <div class="field">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" autocomplete="new-password" required>
+            </div>
 
-<a th:href="@{/login}">Already have an account? Log in</a>
+            <button type="submit" class="btn btn-block btn-lg">Create account</button>
+        </form>
+
+        <p class="auth-foot">Already have an account? <a class="text-link" th:href="@{/login}">Log in</a></p>
+    </div>
+</main>
 </body>
 </html>

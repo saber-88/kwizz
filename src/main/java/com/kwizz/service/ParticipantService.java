@@ -20,12 +20,18 @@ public class ParticipantService {
         this.participantRepository = participantRepository;
         this.sessionRepository = sessionRepository;
     }
-
+    public boolean nicknameTaken(Long sessionId, String name){
+        return participantRepository.findBySessionId(sessionId).stream()
+                .anyMatch(p -> p.getNickname().equals(name));
+    }
     public Participant joinSession(String joinCode, String nickname) {
 
         QuizSession session = sessionRepository.findByJoinCode(joinCode.trim().toUpperCase())
                 .orElseThrow(() -> new IllegalArgumentException("No session found with that join code."));
 
+        if (nicknameTaken(session.getId(), nickname)){
+            throw new IllegalArgumentException("NickName is already taken.");
+        }
         if(session.getStatus() != QuizSession.Status.WAITING){
             throw new IllegalArgumentException("You are late , the quiz already started.");
         }

@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Method not allowed · Kwizz')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: navbar('public', '')}"></header>
+
+<main class="container narrow">
+    <div class="error-page">
+        <div class="error-code">405</div>
+        <h1>Method not allowed</h1>
+        <p>This page can't be used that way. Go back and try again from the page itself.</p>
+        <a class="btn btn-lg" th:href="@{/}">Go home</a>
+    </div>
+</main>
+</body>
+</html>

@@ -1,154 +1,216 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.w3.org/1999/xhtml">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" th:href="@{/css/style.css}">
-    <title>Live session</title>
-    <script th:src="@{/js/theme.js}" defer></script>
-</head>
-<body class="page-host-dashboard">
-<a th:href="@{/quizzes/{id}(id=${quizSession.quiz.id})}">&larr; Back to quiz</a>
-<h1 th:text="${quizSession.quiz.title}"></h1>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Live session · Kwizz')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: navbar('host', 'quizzes')}"></header>
 
-<div th:if="${quizSession.status.name() == 'WAITING'}">
-    <h2>Join code: <span th:text="${quizSession.joinCode}"></span></h2>
-    <img th:src="@{/sessions/{id}/qr.png(id=${quizSession.id})}" alt="QR code to join" width="300" height="300">
-    <p>Waiting to start…</p>
+<main class="container">
+    <a class="back-link" th:href="@{/quizzes/{id}(id=${quizSession.quiz.id})}">&larr; Back to quiz</a>
 
-    <h3>Participants joined: <span id="participant-count" th:text="${quizSession.participants.size()}"></span></h3>
-    <ul id="participant-list">
-        <li th:each="p : ${quizSession.participants}" th:text="${p.nickname}"></li>
-    </ul>
-
-    <form th:action="@{/sessions/{id}/next(id=${quizSession.id})}" method="post">
-        <button type="submit">Start quiz</button>
-    </form>
-</div>
-
-<div th:if="${quizSession.status.name() == 'IN_PROGRESS'}">
-
-    <div id="question-content" th:style="${showingLeaderboard} ? 'display:none' : ''">
-        <p>Question <span th:text="${quizSession.currentQuestionIndex + 1}"></span> of
-            <span th:text="${quizSession.quiz.questions.size()}"></span></p>
-        <p>Time left: <span id="timer"></span>s</p>
-        <h2 th:text="${quizSession.quiz.questions[quizSession.currentQuestionIndex].text}"></h2>
-        <ul>
-            <li th:text="'A. ' + ${quizSession.quiz.questions[quizSession.currentQuestionIndex].optionA}"></li>
-            <li th:text="'B. ' + ${quizSession.quiz.questions[quizSession.currentQuestionIndex].optionB}"></li>
-            <li th:text="'C. ' + ${quizSession.quiz.questions[quizSession.currentQuestionIndex].optionC}"></li>
-            <li th:text="'D. ' + ${quizSession.quiz.questions[quizSession.currentQuestionIndex].optionD}"></li>
-        </ul>
-        <form th:action="@{/sessions/{id}/next(id=${quizSession.id})}" method="post" style="display:inline">
-            <button type="submit">Next question</button>
-        </form>
-        <form th:action="@{/sessions/{id}/stop(id=${quizSession.id})}" method="post" style="display:inline"
-              onsubmit="return confirm('Stop this quiz now?');">
-            <button type="submit">Stop quiz</button>
-        </form>
+    <div class="session-head">
+        <h1 th:text="${quizSession.quiz.title}">Quiz title</h1>
+        <span class="pill pill-wait" th:if="${quizSession.status.name() == 'WAITING'}">Waiting to start</span>
+        <span class="pill pill-live" th:if="${quizSession.status.name() == 'IN_PROGRESS'}">Live</span>
+        <span class="pill" th:if="${quizSession.status.name() == 'FINISHED'}">Finished</span>
     </div>
 
-    <div id="leaderboard-section" th:style="${showingLeaderboard} ? '' : 'display:none'">
-        <h3>Leaderboard</h3>
-        <ol id="leaderboard-list">
-            <li th:each="e : ${leaderboard}" th:text="${e.nickname} + ' — ' + ${e.score}"></li>
-        </ol>
-        <form th:action="@{/sessions/{id}/next(id=${quizSession.id})}" method="post" style="display:inline">
-            <button type="submit">Next question</button>
-        </form>
-        <form th:action="@{/sessions/{id}/stop(id=${quizSession.id})}" method="post" style="display:inline"
-              onsubmit="return confirm('Stop this quiz now?');">
-            <button type="submit">Stop quiz</button>
-        </form>
+    <!-- ===== WAITING ===== -->
+    <div class="lobby" th:if="${quizSession.status.name() == 'WAITING'}">
+        <div class="card">
+            <p class="label muted">Join code</p>
+            <div class="join-code" th:text="${quizSession.joinCode}">ABC123</div>
+            <img class="qr" th:src="@{/sessions/{id}/qr.png(id=${quizSession.id})}" alt="QR code to join"
+                 width="240" height="240">
+            <div class="share">
+                <label class="label" for="join-link">Or share the link</label>
+                <div class="copy-row">
+                    <input type="text" id="join-link" readonly th:value="@{/join(code=${quizSession.joinCode})}">
+                    <button type="button" class="btn btn-secondary" id="copy-link">Copy link</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Players joined: <span class="count" id="participant-count"
+                                      th:text="${quizSession.participants.size()}">0</span></h2>
+            <ul class="chips" id="participant-list">
+                <li th:each="p : ${quizSession.participants}" th:text="${p.nickname}"></li>
+            </ul>
+
+            <form th:action="@{/sessions/{id}/next(id=${quizSession.id})}" method="post">
+                <button type="submit" class="btn btn-lg btn-block">Start quiz</button>
+            </form>
+        </div>
     </div>
 
-</div>
+    <!-- ===== IN PROGRESS ===== -->
+    <div th:if="${quizSession.status.name() == 'IN_PROGRESS'}">
 
-<div th:if="${quizSession.status.name() == 'FINISHED'}">
-    <h2>Quiz finished</h2>
-    <p>This session has ended.</p>
-</div>
+        <div class="card" id="question-content" th:style="${showingLeaderboard} ? 'display:none' : ''">
+            <div class="round-meta">
+                <p class="progress">Question <span th:text="${quizSession.currentQuestionIndex + 1}"></span> of
+                    <span th:text="${quizSession.quiz.questions.size()}"></span></p>
+                <div class="timer" aria-label="Time left"><span id="timer"></span><small>s</small></div>
+            </div>
 
+            <h2 class="question-text"
+                th:text="${quizSession.quiz.questions[quizSession.currentQuestionIndex].text}"></h2>
+
+            <ul class="tiles">
+                <li class="tile tile-a"><span class="key">A</span><span th:text="${quizSession.quiz.questions[quizSession.currentQuestionIndex].optionA}"></span></li>
+                <li class="tile tile-b"><span class="key">B</span><span th:text="${quizSession.quiz.questions[quizSession.currentQuestionIndex].optionB}"></span></li>
+                <li class="tile tile-c"><span class="key">C</span><span th:text="${quizSession.quiz.questions[quizSession.currentQuestionIndex].optionC}"></span></li>
+                <li class="tile tile-d"><span class="key">D</span><span th:text="${quizSession.quiz.questions[quizSession.currentQuestionIndex].optionD}"></span></li>
+            </ul>
+
+            <div class="actions">
+                <form th:action="@{/sessions/{id}/next(id=${quizSession.id})}" method="post">
+                    <button type="submit" class="btn">Next question</button>
+                </form>
+                <form th:action="@{/sessions/{id}/stop(id=${quizSession.id})}" method="post"
+                      onsubmit="return confirm('Stop this quiz now?');">
+                    <button type="submit" class="btn btn-danger">Stop quiz</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card" id="leaderboard-section" th:style="${showingLeaderboard} ? '' : 'display:none'">
+            <h2>Leaderboard</h2>
+            <ol class="leaderboard" id="leaderboard-list">
+                <li th:each="e : ${leaderboard}">
+                    <span class="lb-name" th:text="${e.nickname}"></span>
+                    <span class="lb-score" th:text="${e.score}"></span>
+                </li>
+            </ol>
+
+            <div class="actions">
+                <form th:action="@{/sessions/{id}/next(id=${quizSession.id})}" method="post">
+                    <button type="submit" class="btn">Next question</button>
+                </form>
+                <form th:action="@{/sessions/{id}/stop(id=${quizSession.id})}" method="post"
+                      onsubmit="return confirm('Stop this quiz now?');">
+                    <button type="submit" class="btn btn-danger">Stop quiz</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== FINISHED ===== -->
+    <div class="card" th:if="${quizSession.status.name() == 'FINISHED'}">
+        <h2>Quiz finished</h2>
+        <p class="muted">This session has ended.</p>
+        <div class="actions">
+            <a class="btn" th:href="@{/quizzes/{id}(id=${quizSession.quiz.id})}">Back to quiz</a>
+            <a class="btn btn-secondary" th:href="@{/quizzes}">My quizzes</a>
+        </div>
+    </div>
+</main>
 
 <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7/bundles/stomp.umd.min.js"></script>
 <script th:inline="javascript">
+        (function () {
+            const input = document.getElementById('join-link');
+            const btn = document.getElementById('copy-link');
+            if (!input || !btn) return; // only exists in the waiting state
 
-    let countdownInterval = null;
+            // th:value gives a relative path; make it a full URL players can open
+            input.value = new URL(input.value, window.location.origin).href;
+            input.addEventListener('focus', () => input.select());
 
-    /*[# th:if="${quizSession.status.name() == 'IN_PROGRESS' and !showingLeaderboard}"]*/
-    startCountdown(/*[[${quizSession.quiz.questions[quizSession.currentQuestionIndex].timeLimitSeconds}]]*/ 20);
-    /*[/]*/
-
-    function startCountdown(seconds) {
-        clearInterval(countdownInterval);
-        let remaining = seconds;
-        const el = document.getElementById('timer');
-        if (!el) return;
-        el.textContent = remaining;
-        countdownInterval = setInterval(() => {
-            remaining--;
-            el.textContent = Math.max(remaining, 0);
-            if (remaining <= 0) clearInterval(countdownInterval);
-        }, 1000);
-    }
-
-
-    const sessionId = /*[[${quizSession.id}]]*/ 0;
-
-    const socket = new SockJS('/ws');
-    const stompClient = new StompJs.Client({
-        webSocketFactory: () => socket,
-
-        onConnect: () => {
-            stompClient.subscribe('/topic/session/' + sessionId + '/participants', (message) => {
-                const nicknames = JSON.parse(message.body);
-                const countEl = document.getElementById('participant-count');
-                const listEl = document.getElementById('participant-list');
-                if (!countEl || !listEl) return;
-
-                countEl.textContent = nicknames.length;
-                listEl.innerHTML = '';
-                nicknames.forEach(name => {
-                    const li = document.createElement('li');
-                    li.textContent = name;
-                    listEl.appendChild(li);
-                });
+            btn.addEventListener('click', async () => {
+                let ok = false;
+                try {
+                    await navigator.clipboard.writeText(input.value);
+                    ok = true;
+                } catch (e) {
+                    // clipboard API needs HTTPS or localhost; fall back for plain http:// on a LAN
+                    input.select();
+                    try { ok = document.execCommand('copy'); } catch (e2) { /* ignore */ }
+                }
+                btn.textContent = ok ? 'Copied' : 'Press Ctrl+C';
+                setTimeout(() => { btn.textContent = 'Copy link'; }, 1800);
             });
+        })();
+        let countdownInterval = null;
 
-            stompClient.subscribe('/topic/session/' + sessionId + '/leaderboard', (message) => {
-                const data = JSON.parse(message.body);
-                const listEl = document.getElementById('leaderboard-list');
-                listEl.innerHTML = '';
-                data.entries.forEach(entry => {
-                    const li = document.createElement('li');
-                    li.textContent = entry.nickname + ' — ' + entry.score;
-                    listEl.appendChild(li);
-                });
-            });
+        /*[# th:if="${quizSession.status.name() == 'IN_PROGRESS' and !showingLeaderboard}"]*/
+        startCountdown(/*[[${quizSession.quiz.questions[quizSession.currentQuestionIndex].timeLimitSeconds}]]*/ 20);
+        /*[/]*/
 
-            stompClient.subscribe('/topic/session/' + sessionId + '/leaderboard', (message) => {
-                const data = JSON.parse(message.body);
-                const listEl = document.getElementById('leaderboard-list');
-                const questionEl = document.getElementById('question-content');
-                const leaderboardEl = document.getElementById('leaderboard-section');
-                if (!listEl || !questionEl || !leaderboardEl) return;
+        function startCountdown(seconds) {
+            clearInterval(countdownInterval);
+            let remaining = seconds;
+            const el = document.getElementById('timer');
+            if (!el) return;
+            const badge = el.closest('.timer');
+            const paint = () => {
+                el.textContent = Math.max(remaining, 0);
+                if (badge) badge.classList.toggle('urgent', remaining <= 5);
+            };
+            paint();
+            countdownInterval = setInterval(() => {
+                remaining--;
+                paint();
+                if (remaining <= 0) clearInterval(countdownInterval);
+            }, 1000);
+        }
 
-                listEl.innerHTML = '';
-                data.entries.forEach(entry => {
-                    const li = document.createElement('li');
-                    li.textContent = entry.nickname + ' — ' + entry.score;
-                    listEl.appendChild(li);
-                });
-
-                clearInterval(countdownInterval);
-                questionEl.style.display = 'none';
-                leaderboardEl.style.display = '';
-                // No auto-hide anymore - it stays until the host's next click reloads the page.
+        function fillLeaderboard(listEl, entries) {
+            listEl.innerHTML = '';
+            entries.forEach(entry => {
+                const li = document.createElement('li');
+                const name = document.createElement('span');
+                name.className = 'lb-name';
+                name.textContent = entry.nickname;
+                const score = document.createElement('span');
+                score.className = 'lb-score';
+                score.textContent = entry.score;
+                li.append(name, score);
+                listEl.appendChild(li);
             });
         }
-    });
-    stompClient.activate();
+
+        const sessionId = /*[[${quizSession.id}]]*/ 0;
+
+        const socket = new SockJS('/ws');
+        const stompClient = new StompJs.Client({
+            webSocketFactory: () => socket,
+
+            onConnect: () => {
+                stompClient.subscribe('/topic/session/' + sessionId + '/participants', (message) => {
+                    const nicknames = JSON.parse(message.body);
+                    const countEl = document.getElementById('participant-count');
+                    const listEl = document.getElementById('participant-list');
+                    if (!countEl || !listEl) return;
+
+                    countEl.textContent = nicknames.length;
+                    listEl.innerHTML = '';
+                    nicknames.forEach(name => {
+                        const li = document.createElement('li');
+                        li.textContent = name;
+                        listEl.appendChild(li);
+                    });
+                });
+
+                // One subscription is enough: fill the list, then swap question -> leaderboard.
+                stompClient.subscribe('/topic/session/' + sessionId + '/leaderboard', (message) => {
+                    const data = JSON.parse(message.body);
+                    const listEl = document.getElementById('leaderboard-list');
+                    const questionEl = document.getElementById('question-content');
+                    const leaderboardEl = document.getElementById('leaderboard-section');
+                    if (!listEl || !questionEl || !leaderboardEl) return;
+
+                    fillLeaderboard(listEl, data.entries);
+
+                    clearInterval(countdownInterval);
+                    questionEl.style.display = 'none';
+                    leaderboardEl.style.display = '';
+                    // Stays until the host's next click reloads the page.
+                });
+            }
+        });
+        stompClient.activate();
 </script>
 </body>
 </html>

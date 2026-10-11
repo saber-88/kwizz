@@ -1,8 +1,10 @@
 package com.kwizz.controller;
 
+import com.kwizz.entity.Host;
 import com.kwizz.entity.Question;
 import com.kwizz.entity.Quiz;
 import com.kwizz.repository.HostRepository;
+import com.kwizz.service.HostService;
 import com.kwizz.service.QuizService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -15,10 +17,12 @@ import java.security.Principal;
 public class QuizController {
 
     private final QuizService quizService;
+    private final HostService hostService;
 
 
-    public QuizController(QuizService quizService) {
+    public QuizController(QuizService quizService, HostService hostService) {
         this.quizService = quizService;
+        this.hostService = hostService;
     }
 
 
@@ -43,8 +47,9 @@ public class QuizController {
     }
 
     @GetMapping("/{id}")
-    public String quizDetail(@PathVariable Long id, Model model) {
-        model.addAttribute("quiz", quizService.getQuiz(id));
+    public String quizDetail(@PathVariable Long id, Model model,Principal principal) {
+        Host host = hostService.getHostByUsername(principal.getName());
+        model.addAttribute("quiz", quizService.getQuiz(id,host));
         return "quiz/detail";
     }
 
@@ -56,7 +61,8 @@ public class QuizController {
                               @RequestParam String optionC,
                               @RequestParam String optionD,
                               @RequestParam int correctOption,
-                              @RequestParam(defaultValue = "20") int timeLimitSeconds) {
+                              @RequestParam(defaultValue = "20") int timeLimitSeconds,
+                              Principal principal) {
         Question question = new Question();
         question.setText(text);
         question.setOptionA(optionA);
@@ -66,19 +72,21 @@ public class QuizController {
         question.setCorrectOption(correctOption);
         question.setTimeLimitSeconds(timeLimitSeconds);
 
-        quizService.addQuestion(id, question);
+        Host host = hostService.getHostByUsername(principal.getName());
+        quizService.addQuestion(id, question,host);
         return "redirect:/quizzes/" + id;
     }
 
     @PostMapping("/{id}/delete")
-    public String deleteQuiz(@PathVariable Long id) {
-        quizService.deleteQuiz(id);
+    public String deleteQuiz(@PathVariable Long id, Principal principal) {
+        Host host = hostService.getHostByUsername(principal.getName());
+        quizService.deleteQuiz(id,host);
         return "redirect:/quizzes";
     }
 
     @PostMapping("{quizId}/questions/{questionId}/delete")
-    public String deleteQuestion(@PathVariable Long quizId, @PathVariable Long questionId){
-        quizService.deleteQuestion(quizId,questionId);
+    public String deleteQuestion(@PathVariable Long quizId, @PathVariable Long questionId,Principal principal){
+        quizService.deleteQuestion(quizId,questionId,hostService.getHostByUsername(principal.getName()));
         return "redirect:/quizzes/" + quizId;
     }
 }

@@ -3,6 +3,7 @@ package com.kwizz.service;
 import com.kwizz.entity.Host;
 import com.kwizz.entity.Question;
 import com.kwizz.entity.Quiz;
+import com.kwizz.exception.AccessDeniedException;
 import com.kwizz.exception.ResourceNotFoundException;
 import com.kwizz.repository.*;
 import org.springframework.stereotype.Service;
@@ -34,6 +35,10 @@ public class QuizService {
         this.participantRepository = participantRepository;
         this.quizSessionRepository = quizSessionRepository;
     }
+    private void checkOwnership(Quiz quiz, Host host) throws AccessDeniedException {
+        if(!quiz.getHost().getId().equals(host.getId()))
+            throw new AccessDeniedException("You are not the owner of this quiz");
+    }
     public Long getCurrentHostId(Principal principal) {
         return hostRepository.findByUsername(principal.getName())
                 .orElseThrow(() -> new IllegalStateException("Logged-in host not found in database"))
@@ -57,28 +62,37 @@ public class QuizService {
     // whole method call means the collection is already loaded by the time
     // the controller hands the Quiz to the view.
     @Transactional(readOnly = true)
-    public Quiz getQuiz(Long quizId) {
+    public Quiz getQuiz(Long quizId, Host host) {
         Quiz quiz = quizRepository.findById(quizId)
                 .orElseThrow(() -> new ResourceNotFoundException("No quiz with id " + quizId));
+
+        checkOwnership(quiz,host);
         quiz.getQuestions().size(); // force the lazy collection to load
         return quiz;
     }
 
     @Transactional
-    public Question addQuestion(Long quizId, Question question) {
+    public void addQuestion(Long quizId, Question question, Host host) {
         Quiz quiz = quizRepository.findById(quizId)
                 .orElseThrow(() -> new ResourceNotFoundException("No quiz with id " + quizId));
+        checkOwnership(quiz,host);
+
         question.setQuiz(quiz);
         quiz.getQuestions().add(question);
         quizRepository.save(quiz); // cascade = ALL on Quiz.questions saves the new Question too
-        return question;
     }
 
     @Transactional
-    public void deleteQuiz(Long quizId) {
+    public void deleteQuiz(Long quizId,Host host) {
         if (!quizRepository.existsById(quizId)){
             throw new ResourceNotFoundException("No quiz with id " + quizId);
         }
+        Quiz quiz = quizRepository.findById(quizId).orElseThrow(
+                () -> new IllegalArgumentException("No quiz with id " + quizId)
+        );
+
+        checkOwnership(quiz,host);
+
         // 1. scores of participants in this quiz's sessions
         scoreRepository.deleteAllByQuizId(quizId);
         // 2. participants in those sessions
@@ -90,10 +104,11 @@ public class QuizService {
     }
 
 
-    public void deleteQuestion(Long quizId, Long questionId){
+    public void deleteQuestion(Long quizId, Long questionId,Host host){
         Question question = questionRepository.findById(questionId)
                 .orElseThrow(() -> new ResourceNotFoundException("No question with id " + questionId));
-
+        Quiz quiz = quizRepository.findById(quizId).orElseThrow(() -> new IllegalArgumentException("No quiz with id " + quizId));
+        checkOwnership(quiz,host);
         if (!question.getQuiz().getId().equals(quizId)){
             throw new IllegalArgumentException("Question " + questionId + " does not belong to quiz " + quizId);
         }

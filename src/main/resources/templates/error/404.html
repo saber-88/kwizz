@@ -1,12 +1,16 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.w3.org/1999/xhtml">
-<head><meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" th:href="@{/css/style.css}"><title>Not found</title>    <script th:src="@{/js/theme.js}" defer></script>
-</head>
-<body class="page-error">
-<h1>404 — Not found</h1>
-<p>That page doesn't exist, or whatever it points to has been deleted.</p>
-<a th:href="@{/}">Go home</a>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Page not found · Kwizz')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: navbar('public', '')}"></header>
+
+<main class="container narrow">
+    <div class="error-page">
+        <div class="error-code">404</div>
+        <h1>Page not found</h1>
+        <p>That page doesn't exist, or whatever it pointed to has been deleted.</p>
+        <a class="btn btn-lg" th:href="@{/}">Go home</a>
+    </div>
+</main>
 </body>
 </html>

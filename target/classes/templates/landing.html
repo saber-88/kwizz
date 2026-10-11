@@ -1,20 +1,53 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.w3.org/1999/xhtml">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" th:href="@{/css/style.css}">
-    <title>Quiz App</title>
-    <script th:src="@{/js/theme.js}" defer></script>
-</head>
-<body class="page-landing">
-<h1>Quiz App</h1>
-<p>Host live quizzes for your class.</p>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Kwizz · Live quizzes for your class')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: navbar('public', '')}"></header>
 
-<a th:href="@{/register}">Register as a host</a>
-<br>
-<a th:href="@{/login}">Log in</a>
-<br>
-<a th:href="@{/join}">Join a quiz with a code</a>
+<main class="container">
+    <section class="hero">
+        <div>
+            <h1>Live quizzes for your class.</h1>
+            <p class="lead">
+                Host a quiz, share a code, and watch the leaderboard update after every question.
+            </p>
+            <div class="hero-actions">
+                <a class="btn btn-lg" th:href="@{/register}">Register as a host</a>
+                <a class="btn btn-secondary btn-lg" th:href="@{/login}">Log in</a>
+            </div>
+        </div>
+
+        <div class="card join-card">
+            <h2 class="card-title">Join a quiz</h2>
+            <p class="card-sub">Got a code from your host? Enter it here.</p>
+            <form th:action="@{/join}" method="post">
+                <div class="field">
+                    <label for="code">Join code</label>
+                    <input class="code-input" type="text" id="code" name="code" autocomplete="off" required>
+                </div>
+                <div class="field">
+                    <label for="nickname">Nickname</label>
+                    <input type="text" id="nickname" name="nickname" autocomplete="nickname" required>
+                </div>
+                <button type="submit" class="btn btn-block btn-lg">Join</button>
+            </form>
+        </div>
+    </section>
+
+    <ol class="steps">
+        <li>
+            <h3>Build a quiz</h3>
+            <p>Add questions with four options, one correct answer, and a time limit.</p>
+        </li>
+        <li>
+            <h3>Share the code</h3>
+            <p>Start a session and show the join code or QR code on the big screen.</p>
+        </li>
+        <li>
+            <h3>Play live</h3>
+            <p>Players answer on their phones and scores update after every question.</p>
+        </li>
+    </ol>
+</main>
 </body>
 </html>

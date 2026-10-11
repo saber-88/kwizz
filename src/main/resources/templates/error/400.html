@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Bad request · Kwizz')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: navbar('public', '')}"></header>
+
+<main class="container narrow">
+    <div class="error-page">
+        <div class="error-code">400</div>
+        <h1>Bad request</h1>
+        <p>The request could not be processed. Check what you entered and try again.</p>
+        <a class="btn btn-lg" th:href="@{/}">Go home</a>
+    </div>
+</main>
+</body>
+</html>

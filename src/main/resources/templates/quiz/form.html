@@ -1,23 +1,30 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.w3.org/1999/xhtml">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" th:href="@{/css/style.css}">
-    <title>New quiz</title>
-<script th:src="@{/js/theme.js}" defer></script>
-</head>
-<body class="page-quiz-form">
-<a th:href="@{/quizzes}">&larr; Back to my quizzes</a>
-<h1>New quiz</h1>
-<form th:action="@{/quizzes}" method="post">
-    <label for="title">Title</label>
-    <input type="text" id="title" name="title" required>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('New quiz · Kwizz')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: navbar('host', 'new')}"></header>
 
-    <label for="description">Description</label>
-    <textarea id="description" name="description" rows="3"></textarea>
+<main class="container narrow">
+    <a class="back-link" th:href="@{/quizzes}">&larr; Back to my quizzes</a>
 
-    <button type="submit">Create quiz</button>
-</form>
+    <div class="card auth-card">
+        <h1>New quiz</h1>
+        <p class="card-sub">Give it a title now. You'll add questions on the next page.</p>
+
+        <form th:action="@{/quizzes}" method="post">
+            <div class="field">
+                <label for="title">Title</label>
+                <input type="text" id="title" name="title" required>
+            </div>
+
+            <div class="field">
+                <label for="description">Description <span class="muted">(optional)</span></label>
+                <textarea id="description" name="description" rows="3"></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-block btn-lg">Create quiz</button>
+        </form>
+    </div>
+</main>
 </body>
 </html>

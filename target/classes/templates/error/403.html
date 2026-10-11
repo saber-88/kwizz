@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Access denied · Kwizz')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: navbar('public', '')}"></header>
+
+<main class="container narrow">
+    <div class="error-page">
+        <div class="error-code">403</div>
+        <h1>Access denied</h1>
+        <p>You are not authorized to access this page.</p>
+        <a class="btn btn-lg" th:href="@{/}">Go home</a>
+    </div>
+</main>
+</body>
+</html>

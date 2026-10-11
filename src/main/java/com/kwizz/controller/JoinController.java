@@ -31,6 +31,7 @@ public class JoinController {
     // The "code" query param lets a scanned QR (which encodes
     // /join?code=XXXXXX) pre-fill the field instead of the participant
     // having to retype it.
+
     @GetMapping("/join")
     public String joinForm(@RequestParam(required = false) String code, Model model) {
         model.addAttribute("prefilledCode", code);
